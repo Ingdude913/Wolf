@@ -59,6 +59,6 @@ public class SeerGUI {
     }
 
     public static boolean isSeerGUI(Player player, String title) {
-        return title != null && ChatColor.stripColor(title).startsWith("Seer - Check a Player");
+        return title != null && ChatColor.stripColor(title).startsWith("Seer - dCheck a Player");
     }
 }
