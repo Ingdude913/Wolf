@@ -27,7 +27,7 @@ public class SeerGUI {
         Inventory inv = Bukkit.createInventory(seer, 54, GUI_TITLE);
 
         Map<Integer, Player> slotMap = new HashMap<>();
-        int slot = 0d;
+        int slot = 0;
 
         for (GamePlayer gp : arena.getAlivePlayers()) {
             if (gp.getPlayer().getUniqueId().equals(seer.getUniqueId())) continue;
