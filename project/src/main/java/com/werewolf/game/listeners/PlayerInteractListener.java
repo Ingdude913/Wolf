@@ -4,6 +4,7 @@ import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
 import com.werewolf.game.game.Phase;
+import com.werewolf.game.gui.InfoGUI;
 import com.werewolf.game.gui.SeerGUI;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.ChatColor;
@@ -83,6 +84,27 @@ public class PlayerInteractListener implements Listener {
                 event.setCancelled(true);
                 if (arena.getPhase() == Phase.NIGHT) {
                     player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Right-click a player to heal them.");
+                }
+                return;
+            }
+
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "role-info-book")) {
+                event.setCancelled(true);
+                player.sendMessage(plugin.prefix() + ChatColor.GOLD + "Your role: " + ChatColor.WHITE + gp.getRole().getName());
+                player.sendMessage(plugin.prefix() + ChatColor.GRAY + gp.getRole().getDescription());
+                return;
+            }
+
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "setup-info")) {
+                event.setCancelled(true);
+                InfoGUI.openSetup(plugin, arena, player);
+                return;
+            }
+
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "wolf-team")) {
+                event.setCancelled(true);
+                if (gp.getRole().isWerewolf() || gp.getRole().isLier()) {
+                    InfoGUI.openWolfTeam(arena, player);
                 }
                 return;
             }

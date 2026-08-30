@@ -56,3 +56,12 @@ items:
   skip-day:
     material: CLOCK
     name: "&b&lSkip Time &7(Right-click to skip 1/3 of remaining time)"
+  role-info-book:
+    material: WRITTEN_BOOK
+    name: "&6&lYour Role &7(Right-click to read)"
+  setup-info:
+    material: PAPER
+    name: "&e&lGame Setup &7(Right-click to view setup)"
+  wolf-team:
+    material: RED_WOOL
+    name: "&4&lWolf Team &7(Right-click to see teammates)"

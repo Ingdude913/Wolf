@@ -3,6 +3,7 @@ package com.werewolf.game.listeners;
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
+import com.werewolf.game.gui.InfoGUI;
 import com.werewolf.game.gui.SeerGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -45,6 +46,8 @@ public class InventoryClickListener implements Listener {
 
             arena.seerCheck(player, target);
             player.closeInventory();
+        } else if (InfoGUI.isInfoGUI(title)) {
+            event.setCancelled(true);
         }
     }
 
@@ -55,6 +58,8 @@ public class InventoryClickListener implements Listener {
         String title = event.getView().getTitle();
         if (SeerGUI.isSeerGUI(player, title)) {
             SeerGUI.clearMapping(player);
+        } else if (InfoGUI.isInfoGUI(title)) {
+            InfoGUI.clearOpenGUI(player);
         }
     }
 }

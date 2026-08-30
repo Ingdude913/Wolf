@@ -286,9 +286,19 @@ public class Arena {
         for (GamePlayer gp : getAlivePlayers()) {
             Player p = gp.getPlayer();
             p.getInventory().clear();
-            p.getInventory().addItem(ItemBuilder.create(plugin, "vote-sword"));
-            p.getInventory().addItem(ItemBuilder.create(plugin, "revoke-vote"));
-            p.getInventory().addItem(ItemBuilder.create(plugin, "skip-day"));
+            p.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
+            p.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+            p.getInventory().setItem(2, ItemBuilder.create(plugin, "skip-day"));
+            giveInfoItems(gp);
+        }
+    }
+
+    private void giveInfoItems(GamePlayer gp) {
+        Player p = gp.getPlayer();
+        p.getInventory().setItem(7, ItemBuilder.create(plugin, "setup-info"));
+        p.getInventory().setItem(8, ItemBuilder.create(plugin, "role-info-book"));
+        if (gp.getRole().isWerewolf() || gp.getRole().isLier()) {
+            p.getInventory().setItem(6, ItemBuilder.create(plugin, "wolf-team"));
         }
     }
 
@@ -402,6 +412,7 @@ public class Arena {
             Player p = gp.getPlayer();
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
+            giveInfoItems(gp);
         }
 
         createBossBar(ChatColor.DARK_PURPLE + "Night Time", BarColor.PURPLE);
@@ -778,13 +789,15 @@ public class Arena {
 
         if (phase == Phase.DAY) {
             player.getInventory().clear();
-            player.getInventory().addItem(ItemBuilder.create(plugin, "vote-sword"));
-            player.getInventory().addItem(ItemBuilder.create(plugin, "revoke-vote"));
-            player.getInventory().addItem(ItemBuilder.create(plugin, "skip-day"));
+            player.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
+            player.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+            player.getInventory().setItem(2, ItemBuilder.create(plugin, "skip-day"));
+            giveInfoItems(gp);
             role.onDayStart(player);
         } else if (phase == Phase.NIGHT) {
             player.getInventory().clear();
             role.onNightStart(player);
+            giveInfoItems(gp);
         }
     }
 
