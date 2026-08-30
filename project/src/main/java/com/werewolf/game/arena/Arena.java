@@ -594,6 +594,7 @@ public class Arena {
     }
 
     private boolean checkWinCondition() {
+        if (debugMode) return false;
         long badAlive = getAlivePlayers().stream().filter(gp -> gp.getRole().isBad()).count();
         long goodAlive = getAlivePlayers().stream().filter(gp -> gp.getRole().isGood()).count();
 
