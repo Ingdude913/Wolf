@@ -731,6 +731,19 @@ public class Arena {
         }
     }
 
+    public void skipNightFromCommand() {
+        if (phase != Phase.NIGHT) return;
+        int skipAmount = Math.max(1, phaseTimer / 3);
+        phaseTimer -= skipAmount;
+        broadcast(ChatColor.DARK_PURPLE + "Admin skipped " + skipAmount + " seconds! Night ends in " + Math.max(0, phaseTimer) + " seconds.");
+        updateBossBar();
+        if (phaseTimer <= 0) {
+            cancelTask();
+            taskId = -1;
+            endNightPhase();
+        }
+    }
+
     public void forceSetRole(Player player, String roleName) {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null) {
