@@ -22,6 +22,7 @@ public class Arena {
 
     private final WerewolfPlugin plugin;
     private final String name;
+    private String worldName;
     private Location lobbyLocation;
     private Location spawnLocation;
 
@@ -37,9 +38,10 @@ public class Arena {
     private final Map<UUID, Integer> voteCounts = new HashMap<>();
     private final Map<UUID, UUID> hunterTargets = new HashMap<>();
 
-    public Arena(WerewolfPlugin plugin, String name) {
+    public Arena(WerewolfPlugin plugin, String name, String worldName) {
         this.plugin = plugin;
         this.name = name;
+        this.worldName = worldName;
         this.minPlayers = plugin.getConfig().getInt("min-players", 4);
         this.dayDuration = plugin.getConfig().getInt("day-duration", 120);
         this.nightDuration = plugin.getConfig().getInt("night-duration", 60);
@@ -48,6 +50,14 @@ public class Arena {
 
     public String getName() {
         return name;
+    }
+
+    public String getWorldName() {
+        return worldName;
+    }
+
+    public void setWorldName(String worldName) {
+        this.worldName = worldName;
     }
 
     public void setLobbyLocation(Location loc) {
