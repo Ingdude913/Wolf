@@ -17,6 +17,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -579,6 +581,29 @@ public class Arena {
         if (gp == null || !gp.isAlive()) return;
         if (!gp.getRole().isWerewolf() && !gp.getRole().isLier()) return;
         PlayerInventory inv = player.getInventory();
+
+        if (gp.isTransformed()) {
+            inv.setHelmet(null);
+            inv.setChestplate(null);
+            inv.setLeggings(null);
+            inv.setBoots(null);
+            player.removePotionEffect(PotionEffectType.SPEED);
+            inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
+            gp.setTransformed(false);
+            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish briefly!");
+            return;
+        }
+
+        ItemStack helmet = new ItemStack(Material.NETHERITE_HELMET);
+        ItemStack chestplate = ItemBuilder.create(plugin, "werewolf-armor");
+        ItemStack leggings = new ItemStack(Material.NETHERITE_LEGGINGS);
+        ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
+        inv.setHelmet(helmet);
+        inv.setChestplate(chestplate);
+        inv.setLeggings(leggings);
+        inv.setBoots(boots);
+
         ItemStack axe = ItemBuilder.create(plugin, "werewolf-axe");
         if (gp.getRole().isLier()) {
             axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7(Cannot kill)");
@@ -586,10 +611,9 @@ public class Arena {
         if (!inv.contains(axe)) {
             inv.addItem(axe);
         }
-        ItemStack armor = ItemBuilder.create(plugin, "werewolf-armor");
-        if (inv.getChestplate() == null || inv.getChestplate().getType() == Material.AIR) {
-            inv.setChestplate(armor);
-        }
+
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
+        gp.setTransformed(true);
         player.sendMessage(plugin.prefix() + ChatColor.RED + "You transform into a werewolf!");
     }
 

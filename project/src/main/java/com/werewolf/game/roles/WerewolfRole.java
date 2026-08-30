@@ -6,6 +6,8 @@ import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +16,13 @@ public class WerewolfRole extends Role {
 
     public WerewolfRole() {
         super("Werewolf", Team.BAD,
-                "You are a Werewolf! During the night, right-click your ability to wear wolf armor and get an axe to kill the opposing team. During the day, blend in with the villagers.");
+                "You are a Werewolf! During the night, right-click your armor item to transform: you get full netherite armor, a werewolf axe, and speed. Right-click again to untransform and become briefly invisible. During the day, blend in with the villagers.");
     }
 
     @Override
     public void onNightStart(Player player) {
         player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&cNight falls! You can now use your werewolf abilities.");
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&7Right-click while holding nothing (or your ability item) to transform and get your axe.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&7Right-click your Werewolf Armor to transform. Right-click again to untransform and go invisible briefly.");
         giveAbilityItem(player);
     }
 
@@ -45,9 +47,22 @@ public class WerewolfRole extends Role {
     private void removeWerewolfGear(Player player) {
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe"));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor"));
+        player.removePotionEffect(PotionEffectType.SPEED);
+        if (player.getInventory().getHelmet() != null &&
+                player.getInventory().getHelmet().getType() == Material.NETHERITE_HELMET) {
+            player.getInventory().setHelmet(null);
+        }
         if (player.getInventory().getChestplate() != null &&
-                player.getInventory().getChestplate().getType() == Material.IRON_CHESTPLATE) {
+                player.getInventory().getChestplate().getType() == Material.NETHERITE_CHESTPLATE) {
             player.getInventory().setChestplate(null);
+        }
+        if (player.getInventory().getLeggings() != null &&
+                player.getInventory().getLeggings().getType() == Material.NETHERITE_LEGGINGS) {
+            player.getInventory().setLeggings(null);
+        }
+        if (player.getInventory().getBoots() != null &&
+                player.getInventory().getBoots().getType() == Material.NETHERITE_BOOTS) {
+            player.getInventory().setBoots(null);
         }
     }
 

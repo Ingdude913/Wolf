@@ -83,14 +83,12 @@ public class PlayerDamageListener implements Listener {
                 arena.castVote(attacker, target);
                 return;
             }
-            event.setCancelled(true);
             return;
         }
 
         if (arena.getPhase() == Phase.NIGHT) {
             if (ItemBuilder.isItemKey(plugin, attacker.getInventory().getItemInMainHand(), "werewolf-axe")) {
                 if (attackerGp.getRole().isWerewolf()) {
-                    event.setCancelled(false);
                     arena.werewolfKill(attacker, target);
                     return;
                 } else if (attackerGp.getRole().isLier()) {
@@ -114,7 +112,6 @@ public class PlayerDamageListener implements Listener {
                 arena.hunterSelectTarget(attacker, target);
                 return;
             }
-            event.setCancelled(true);
         }
     }
 }

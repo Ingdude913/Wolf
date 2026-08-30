@@ -48,11 +48,11 @@ items:
     material: COMPASS
     name: "&6&lHunter's Compass &7(Right-click a player to select your target)"
   werewolf-axe:
-    material: IRON_AXE
+    material: NETHERITE_AXE
     name: "&4&lWerewolf Axe &7(Left-click to kill)"
   werewolf-armor:
-    material: IRON_CHESTPLATE
-    name: "&4&lWerewolf Armor &7(Worn during night)"
+    material: NETHERITE_CHESTPLATE
+    name: "&4&lWerewolf Armor &7(Right-click to transform)"
   skip-day:
     material: CLOCK
     name: "&b&lSkip Time &7(Right-click to skip 1/3 of remaining time)"

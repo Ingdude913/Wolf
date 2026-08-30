@@ -10,6 +10,7 @@ public class GamePlayer {
     private boolean alive = true;
     private boolean voted = false;
     private Player votedFor = null;
+    private boolean transformed = false;
 
     public GamePlayer(Player player) {
         this.player = player;
@@ -54,6 +55,14 @@ public class GamePlayer {
     public void resetVote() {
         this.voted = false;
         this.votedFor = null;
+    }
+
+    public boolean isTransformed() {
+        return transformed;
+    }
+
+    public void setTransformed(boolean transformed) {
+        this.transformed = transformed;
     }
 
     public WerewolfRole asWerewolf() {
