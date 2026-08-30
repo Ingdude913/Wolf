@@ -1,0 +1,55 @@
+# Werewolf Plugin Configuration
+
+# Minimum players required to start a game
+min-players: 4
+
+# Day phase duration in seconds
+day-duration: 120
+
+# Night phase duration in seconds
+night-duration: 60
+
+# Lobby (waiting) duration in seconds after minimum players reached
+lobby-duration: 30
+
+# Whether to use the world's natural day/night cycle (false = force time)
+use-natural-time: false
+
+# Messages prefix
+prefix: "&8[&cWerewolf&8] &r"
+
+# Role distribution weights (higher = more likely)
+role-weights:
+  werewolf: 1
+  villager: 3
+  witch: 1
+  seer: 1
+  hunter: 1
+  lier: 1
+
+# Items
+items:
+  vote-sword:
+    material: STONE_SWORD
+    name: "&c&lVote Sword &7(Left-click a player to vote)"
+  revoke-vote:
+    material: PAPER
+    name: "&e&lRevoke Vote &7(Right-click to revoke your vote)"
+  seer-book:
+    material: BOOK
+    name: "&9&lSeer's Book &7(Right-click to check a player)"
+  witch-poison:
+    material: POTION
+    name: "&5&lPoison &7(Right-click a player to kill them)"
+  witch-heal:
+    material: POTION
+    name: "&a&lHeal &7(Right-click a player to heal them)"
+  hunter-target:
+    material: COMPASS
+    name: "&6&lHunter's Compass &7(Right-click a player to select your target)"
+  werewolf-axe:
+    material: IRON_AXE
+    name: "&4&lWerewolf Axe &7(Left-click to kill)"
+  werewolf-armor:
+    material: IRON_CHESTPLATE
+    name: "&4&lWerewolf Armor &7(Worn during night)"

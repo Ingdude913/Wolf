@@ -1,0 +1,55 @@
+package com.werewolf.game.roles;
+
+import com.werewolf.game.WerewolfPlugin;
+import com.werewolf.game.game.Team;
+import com.werewolf.game.util.ItemBuilder;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class LierRole extends Role {
+
+    public LierRole() {
+        super("Lier", Team.GOOD,
+                "You are the Lier! You are NOT a werewolf, but you can pretend to be one. " +
+                        "Real werewolves see you as a teammate, but they don't know you are fake. " +
+                        "During the night, you get the same werewolf ability items, but your axe cannot kill. " +
+                        "Use your deception to confuse the werewolves and help the good team win!");
+    }
+
+    @Override
+    public void onNightStart(Player player) {
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&cNight falls! The werewolves think you are one of them.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&7You receive werewolf items to blend in, but your axe is fake and cannot kill.");
+        ItemStack armor = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor");
+        ItemStack axe = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe");
+        axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7&(Cannot kill)");
+        player.getInventory().addItem(armor, axe);
+    }
+
+    @Override
+    public void onDayStart(Player player) {
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&eDay breaks! Your deception items are removed.");
+        player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor"));
+        player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe"));
+    }
+
+    @Override
+    public List<ItemStack> getRoleItems() {
+        List<ItemStack> items = new ArrayList<>();
+        items.add(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor"));
+        return items;
+    }
+
+    @Override
+    public boolean isLier() {
+        return true;
+    }
+
+    @Override
+    public boolean canSeeWerewolves() {
+        return true;
+    }
+}

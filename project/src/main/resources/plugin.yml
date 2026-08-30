@@ -1,0 +1,18 @@
+name: Werewolf
+version: 1.0.0
+main: com.werewolf.game.WerewolfPlugin
+api-version: 1.13
+author: WerewolfGame
+description: A Werewolf (Mafia-style) game plugin for Spigot.
+commands:
+  werewolf:
+    description: Main Werewolf game command
+    usage: /werewolf help
+    aliases: [ww]
+permissions:
+  werewolf.admin:
+    description: Allows admin commands (create/delete arenas, force start/stop)
+    default: op
+  werewolf.play:
+    description: Allows joining arenas and playing
+    default: true

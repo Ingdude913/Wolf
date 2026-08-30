@@ -1,0 +1,64 @@
+package com.werewolf.game;
+
+import com.werewolf.game.arena.Arena;
+import com.werewolf.game.arena.ArenaManager;
+import com.werewolf.game.commands.WerewolfCommand;
+import com.werewolf.game.game.GameManager;
+import com.werewolf.game.listeners.*;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class WerewolfPlugin extends JavaPlugin {
+
+    private static WerewolfPlugin instance;
+
+    private ArenaManager arenaManager;
+    private GameManager gameManager;
+
+    @Override
+    public void onEnable() {
+        instance = this;
+        saveDefaultConfig();
+
+        this.arenaManager = new ArenaManager(this);
+        this.gameManager = new GameManager(this);
+
+        WerewolfCommand command = new WerewolfCommand(this);
+        getCommand("werewolf").setExecutor(command);
+        getCommand("werewolf").setTabCompleter(command);
+
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDamageListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
+
+        getLogger().info("Werewolf plugin enabled!");
+    }
+
+    @Override
+    public void onDisable() {
+        if (arenaManager != null) {
+            for (Arena arena : arenaManager.getArenas()) {
+                arena.forceStop();
+            }
+        }
+        getLogger().info("Werewolf plugin disabled!");
+    }
+
+    public static WerewolfPlugin getInstance() {
+        return instance;
+    }
+
+    public ArenaManager getArenaManager() {
+        return arenaManager;
+    }
+
+    public GameManager getGameManager() {
+        return gameManager;
+    }
+
+    public String prefix() {
+        return getConfig().getString("prefix", "&8[&cWerewolf&8] &r");
+    }
+}

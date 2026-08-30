@@ -1,0 +1,282 @@
+package com.werewolf.game.commands;
+
+import com.werewolf.game.WerewolfPlugin;
+import com.werewolf.game.arena.Arena;
+import com.werewolf.game.arena.ArenaManager;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class WerewolfCommand implements CommandExecutor, TabCompleter {
+
+    private final WerewolfPlugin plugin;
+
+    public WerewolfCommand(WerewolfPlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            sendHelp(sender);
+            return true;
+        }
+
+        String sub = args[0].toLowerCase();
+
+        switch (sub) {
+            case "help":
+                sendHelp(sender);
+                break;
+            case "join":
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Only players can use this command.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww join <arena>");
+                    return true;
+                }
+                handleJoin((Player) sender, args[1]);
+                break;
+            case "leave":
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Only players can use this command.");
+                    return true;
+                }
+                handleLeave((Player) sender);
+                break;
+            case "list":
+                handleList(sender);
+                break;
+            case "create":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww create <arena>");
+                    return true;
+                }
+                handleCreate(sender, args[1]);
+                break;
+            case "delete":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww delete <arena>");
+                    return true;
+                }
+                handleDelete(sender, args[1]);
+                break;
+            case "setlobby":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww setlobby <arena>");
+                    return true;
+                }
+                handleSetLobby((Player) sender, args[1]);
+                break;
+            case "setspawn":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww setspawn <arena>");
+                    return true;
+                }
+                handleSetSpawn((Player) sender, args[1]);
+                break;
+            case "forcestart":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww forcestart <arena>");
+                    return true;
+                }
+                handleForceStart(sender, args[1]);
+                break;
+            case "forcestop":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww forcestop <arena>");
+                    return true;
+                }
+                handleForceStop(sender, args[1]);
+                break;
+            default:
+                sendHelp(sender);
+                break;
+        }
+        return true;
+    }
+
+    private void handleJoin(Player player, String arenaName) {
+        ArenaManager am = plugin.getArenaManager();
+        Arena arena = am.getArena(arenaName);
+        if (arena == null) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        Arena current = am.getArenaByPlayer(player);
+        if (current != null) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You are already in arena " + current.getName() + "! Leave first.");
+            return;
+        }
+        arena.addPlayer(player);
+    }
+
+    private void handleLeave(Player player) {
+        ArenaManager am = plugin.getArenaManager();
+        Arena arena = am.getArenaByPlayer(player);
+        if (arena == null) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You are not in an arena!");
+            return;
+        }
+        arena.removePlayer(player);
+        player.sendMessage(plugin.prefix() + ChatColor.GREEN + "You left the arena.");
+    }
+
+    private void handleList(CommandSender sender) {
+        ArenaManager am = plugin.getArenaManager();
+        if (am.getArenas().isEmpty()) {
+            sender.sendMessage(plugin.prefix() + ChatColor.YELLOW + "No arenas available.");
+            return;
+        }
+        sender.sendMessage(plugin.prefix() + ChatColor.GOLD + "Arenas:");
+        for (Arena arena : am.getArenas()) {
+            sender.sendMessage(ChatColor.GRAY + " - " + ChatColor.WHITE + arena.getName() +
+                    ChatColor.GRAY + " (" + arena.getPlayers().size() + " players) " +
+                    ChatColor.YELLOW + arena.getPhase());
+        }
+    }
+
+    private void handleCreate(CommandSender sender, String arenaName) {
+        ArenaManager am = plugin.getArenaManager();
+        if (am.arenaExists(arenaName)) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " already exists!");
+            return;
+        }
+        am.createArena(arenaName);
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Arena " + arenaName + " created! Set lobby and spawn with /ww setlobby and /ww setspawn.");
+    }
+
+    private void handleDelete(CommandSender sender, String arenaName) {
+        ArenaManager am = plugin.getArenaManager();
+        if (!am.arenaExists(arenaName)) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        am.deleteArena(arenaName);
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Arena " + arenaName + " deleted.");
+    }
+
+    private void handleSetLobby(Player player, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        arena.setLobbyLocation(player.getLocation());
+        player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Lobby location set for arena " + arenaName + "!");
+    }
+
+    private void handleSetSpawn(Player player, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        arena.setSpawnLocation(player.getLocation());
+        player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Spawn location set for arena " + arenaName + "!");
+    }
+
+    private void handleForceStart(CommandSender sender, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        if (arena.getPhase() != com.werewolf.game.game.Phase.LOBBY) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Game already in progress!");
+            return;
+        }
+        if (arena.getPlayers().size() < 2) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Need at least 2 players to start!");
+            return;
+        }
+        arena.startGame();
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Game force started in arena " + arenaName + "!");
+    }
+
+    private void handleForceStop(CommandSender sender, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        arena.forceStop();
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Game force stopped in arena " + arenaName + "!");
+    }
+
+    private void sendHelp(CommandSender sender) {
+        sender.sendMessage(ChatColor.DARK_RED + "===== " + ChatColor.RED + "Werewolf Commands" + ChatColor.DARK_RED + " =====");
+        sender.sendMessage(ChatColor.GOLD + "/ww join <arena>" + ChatColor.GRAY + " - Join an arena");
+        sender.sendMessage(ChatColor.GOLD + "/ww leave" + ChatColor.GRAY + " - Leave your current arena");
+        sender.sendMessage(ChatColor.GOLD + "/ww list" + ChatColor.GRAY + " - List all arenas");
+        if (sender.hasPermission("werewolf.admin")) {
+            sender.sendMessage(ChatColor.GOLD + "/ww create <arena>" + ChatColor.GRAY + " - Create a new arena");
+            sender.sendMessage(ChatColor.GOLD + "/ww delete <arena>" + ChatColor.GRAY + " - Delete an arena");
+            sender.sendMessage(ChatColor.GOLD + "/ww setlobby <arena>" + ChatColor.GRAY + " - Set lobby location");
+            sender.sendMessage(ChatColor.GOLD + "/ww setspawn <arena>" + ChatColor.GRAY + " - Set game spawn location");
+            sender.sendMessage(ChatColor.GOLD + "/ww forcestart <arena>" + ChatColor.GRAY + " - Force start a game");
+            sender.sendMessage(ChatColor.GOLD + "/ww forcestop <arena>" + ChatColor.GRAY + " - Force stop a game");
+        }
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> completions = new ArrayList<>();
+        if (args.length == 1) {
+            completions.add("help");
+            completions.add("join");
+            completions.add("leave");
+            completions.add("list");
+            if (sender.hasPermission("werewolf.admin")) {
+                completions.add("create");
+                completions.add("delete");
+                completions.add("setlobby");
+                completions.add("setspawn");
+                completions.add("forcestart");
+                completions.add("forcestop");
+            }
+        } else if (args.length == 2) {
+            String sub = args[0].toLowerCase();
+            if (sub.equals("join") || sub.equals("delete") || sub.equals("setlobby") ||
+                    sub.equals("setspawn") || sub.equals("forcestart") || sub.equals("forcestop")) {
+                for (Arena arena : plugin.getArenaManager().getArenas()) {
+                    completions.add(arena.getName());
+                }
+            }
+        }
+        return completions;
+    }
+}
