@@ -22,6 +22,8 @@ public class WerewolfPlugin extends JavaPlugin {
         this.arenaManager = new ArenaManager(this);
         this.gameManager = new GameManager(this);
 
+        arenaManager.getWorldManager().getWorldsFolder();
+
         arenaManager.loadArenasFromConfig();
 
         WerewolfCommand command = new WerewolfCommand(this);
