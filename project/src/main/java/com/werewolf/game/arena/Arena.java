@@ -10,6 +10,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -40,6 +43,9 @@ public class Arena {
     private final Map<UUID, UUID> hunterTargets = new HashMap<>();
 
     private boolean debugMode = false;
+
+    private BossBar bossBar = null;
+    private int actionBarTaskId = -1;
 
     public Arena(WerewolfPlugin plugin, String name, String worldName) {
         this.plugin = plugin;
@@ -142,6 +148,10 @@ public class Arena {
         player.getInventory().clear();
         player.setHealth(20);
         player.setFoodLevel(20);
+
+        if (bossBar != null) {
+            bossBar.addPlayer(player);
+        }
 
         if (players.size() >= minPlayers && taskId == -1) {
             startLobbyCountdown();
@@ -285,6 +295,9 @@ public class Arena {
         phaseTimer = dayDuration;
         setWorldTime(6000);
 
+        createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
+        startActionBar();
+
         taskId = new BukkitRunnable() {
             @Override
             public void run() {
@@ -297,6 +310,7 @@ public class Arena {
                 if (phaseTimer == 30 || phaseTimer == 10 || phaseTimer <= 5) {
                     broadcast(ChatColor.GOLD + "Day ends in " + phaseTimer + " seconds!");
                 }
+                updateBossBar();
                 phaseTimer--;
             }
         }.runTaskTimer(plugin, 20L, 20L).getTaskId();
@@ -388,6 +402,8 @@ public class Arena {
             gp.getRole().onNightStart(p);
         }
 
+        createBossBar(ChatColor.DARK_PURPLE + "Night Time", BarColor.PURPLE);
+
         broadcast(ChatColor.DARK_PURPLE + "Night falls! Use your abilities wisely.");
 
         taskId = new BukkitRunnable() {
@@ -402,6 +418,7 @@ public class Arena {
                 if (phaseTimer == 30 || phaseTimer == 10 || phaseTimer <= 5) {
                     broadcast(ChatColor.DARK_PURPLE + "Night ends in " + phaseTimer + " seconds!");
                 }
+                updateBossBar();
                 phaseTimer--;
             }
         }.runTaskTimer(plugin, 20L, 20L).getTaskId();
@@ -594,6 +611,8 @@ public class Arena {
     private void endGame(String winningTeam, String reason) {
         phase = Phase.ENDED;
         cancelTask();
+        removeBossBar();
+        stopActionBar();
         broadcast(ChatColor.GOLD + "===== GAME OVER =====");
         broadcast(ChatColor.YELLOW + reason);
         broadcast(ChatColor.GOLD + "The " + winningTeam + " wins!");
@@ -624,6 +643,8 @@ public class Arena {
 
     public void forceStop() {
         cancelTask();
+        removeBossBar();
+        stopActionBar();
         for (GamePlayer gp : players) {
             Player p = gp.getPlayer();
             p.setGameMode(GameMode.SURVIVAL);
@@ -663,6 +684,8 @@ public class Arena {
         int skipAmount = Math.max(1, phaseTimer / 3);
         phaseTimer -= skipAmount;
         broadcast(ChatColor.AQUA + player.getName() + " skipped " + skipAmount + " seconds! Day ends in " + Math.max(0, phaseTimer) + " seconds.");
+        player.getInventory().removeItem(ItemBuilder.create(plugin, "skip-day"));
+        updateBossBar();
         if (phaseTimer <= 0) {
             cancelTask();
             taskId = -1;
@@ -675,6 +698,7 @@ public class Arena {
         int skipAmount = Math.max(1, phaseTimer / 3);
         phaseTimer -= skipAmount;
         broadcast(ChatColor.AQUA + "Admin skipped " + skipAmount + " seconds! Day ends in " + Math.max(0, phaseTimer) + " seconds.");
+        updateBossBar();
         if (phaseTimer <= 0) {
             cancelTask();
             taskId = -1;
@@ -732,6 +756,68 @@ public class Arena {
             sender.sendMessage(ChatColor.GRAY + gp.getPlayer().getName() + " - " +
                     (gp.isAlive() ? ChatColor.GREEN + "ALIVE" : ChatColor.RED + "DEAD") +
                     ChatColor.GRAY + " - " + ChatColor.WHITE + gp.getRole().getName());
+        }
+    }
+
+    private void createBossBar(String title, BarColor color) {
+        removeBossBar();
+        bossBar = Bukkit.createBossBar(title, color, BarStyle.SOLID);
+        bossBar.setProgress(1.0);
+        for (GamePlayer gp : players) {
+            bossBar.addPlayer(gp.getPlayer());
+        }
+    }
+
+    private void updateBossBar() {
+        if (bossBar == null) return;
+        int totalDuration = (phase == Phase.DAY) ? dayDuration : nightDuration;
+        if (totalDuration <= 0) return;
+        double progress = Math.max(0.0, Math.min(1.0, (double) phaseTimer / (double) totalDuration));
+        bossBar.setProgress(progress);
+        String phaseName = (phase == Phase.DAY) ? ChatColor.GOLD + "Day" : ChatColor.DARK_PURPLE + "Night";
+        bossBar.setTitle(phaseName + ChatColor.GRAY + " - " + Math.max(0, phaseTimer) + "s");
+    }
+
+    private void removeBossBar() {
+        if (bossBar != null) {
+            bossBar.removeAll();
+            bossBar = null;
+        }
+    }
+
+    private void startActionBar() {
+        stopActionBar();
+        actionBarTaskId = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (phase != Phase.DAY && phase != Phase.NIGHT) {
+                    cancel();
+                    actionBarTaskId = -1;
+                    return;
+                }
+                for (GamePlayer gp : players) {
+                    Player p = gp.getPlayer();
+                    if (!p.isOnline()) continue;
+                    String text;
+                    if (gp.isAlive()) {
+                        text = ChatColor.GOLD + "Role: " + ChatColor.WHITE + gp.getRole().getName() +
+                                ChatColor.GRAY + " | " + ChatColor.AQUA + (phase == Phase.DAY ? "Day" : "Night") +
+                                ChatColor.GRAY + " | " + (gp.isAlive() ? ChatColor.GREEN + "Alive" : ChatColor.RED + "Dead");
+                    } else {
+                        text = ChatColor.RED + "You are dead - Spectating" +
+                                ChatColor.GRAY + " | " + ChatColor.AQUA + (phase == Phase.DAY ? "Day" : "Night");
+                    }
+                    p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
+                            net.md_5.bungee.api.chat.TextComponent.fromLegacyText(text));
+                }
+            }
+        }.runTaskTimer(plugin, 10L, 20L).getTaskId();
+    }
+
+    private void stopActionBar() {
+        if (actionBarTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(actionBarTaskId);
+            actionBarTaskId = -1;
         }
     }
 
