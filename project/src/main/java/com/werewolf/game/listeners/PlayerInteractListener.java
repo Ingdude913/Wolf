@@ -39,6 +39,14 @@ public class PlayerInteractListener implements Listener {
                 return;
             }
 
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "skip-day")) {
+                event.setCancelled(true);
+                if (arena.getPhase() == Phase.DAY) {
+                    arena.skipDay(player);
+                }
+                return;
+            }
+
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "seer-book")) {
                 event.setCancelled(true);
                 if (arena.getPhase() == Phase.NIGHT) {

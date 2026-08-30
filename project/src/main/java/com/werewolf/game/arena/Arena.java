@@ -10,6 +10,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -37,6 +38,8 @@ public class Arena {
 
     private final Map<UUID, Integer> voteCounts = new HashMap<>();
     private final Map<UUID, UUID> hunterTargets = new HashMap<>();
+
+    private boolean debugMode = false;
 
     public Arena(WerewolfPlugin plugin, String name, String worldName) {
         this.plugin = plugin;
@@ -78,6 +81,14 @@ public class Arena {
 
     public Phase getPhase() {
         return phase;
+    }
+
+    public boolean isDebugMode() {
+        return debugMode;
+    }
+
+    public void setDebugMode(boolean debugMode) {
+        this.debugMode = debugMode;
     }
 
     public Set<GamePlayer> getPlayers() {
@@ -265,6 +276,7 @@ public class Arena {
             p.getInventory().clear();
             p.getInventory().addItem(ItemBuilder.create(plugin, "vote-sword"));
             p.getInventory().addItem(ItemBuilder.create(plugin, "revoke-vote"));
+            p.getInventory().addItem(ItemBuilder.create(plugin, "skip-day"));
         }
     }
 
@@ -640,6 +652,86 @@ public class Arena {
             spawnLocation.getWorld().setTime(time);
         } else if (!players.isEmpty()) {
             players.iterator().next().getPlayer().getWorld().setTime(time);
+        }
+    }
+
+    public void skipDay(Player player) {
+        if (phase != Phase.DAY) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You can only skip time during the day!");
+            return;
+        }
+        int skipAmount = Math.max(1, phaseTimer / 3);
+        phaseTimer -= skipAmount;
+        broadcast(ChatColor.AQUA + player.getName() + " skipped " + skipAmount + " seconds! Day ends in " + Math.max(0, phaseTimer) + " seconds.");
+        if (phaseTimer <= 0) {
+            cancelTask();
+            taskId = -1;
+            endDayPhase();
+        }
+    }
+
+    public void skipDayFromCommand() {
+        if (phase != Phase.DAY) return;
+        int skipAmount = Math.max(1, phaseTimer / 3);
+        phaseTimer -= skipAmount;
+        broadcast(ChatColor.AQUA + "Admin skipped " + skipAmount + " seconds! Day ends in " + Math.max(0, phaseTimer) + " seconds.");
+        if (phaseTimer <= 0) {
+            cancelTask();
+            taskId = -1;
+            endDayPhase();
+        }
+    }
+
+    public void forceSetRole(Player player, String roleName) {
+        GamePlayer gp = getGamePlayer(player);
+        if (gp == null) {
+            return;
+        }
+        Role role;
+        switch (roleName.toLowerCase()) {
+            case "werewolf":
+                role = new WerewolfRole();
+                break;
+            case "villager":
+                role = new VillagerRole();
+                break;
+            case "witch":
+                role = new WitchRole();
+                break;
+            case "seer":
+                role = new SeerRole();
+                break;
+            case "hunter":
+                role = new HunterRole();
+                break;
+            case "lier":
+                role = new LierRole();
+                break;
+            default:
+                return;
+        }
+        gp.setRole(role);
+        player.sendMessage(plugin.prefix() + ChatColor.GOLD + "Your role has been set to: " + ChatColor.WHITE + role.getName());
+        player.sendMessage(plugin.prefix() + ChatColor.GRAY + role.getDescription());
+
+        if (phase == Phase.DAY) {
+            player.getInventory().clear();
+            player.getInventory().addItem(ItemBuilder.create(plugin, "vote-sword"));
+            player.getInventory().addItem(ItemBuilder.create(plugin, "revoke-vote"));
+            player.getInventory().addItem(ItemBuilder.create(plugin, "skip-day"));
+            role.onDayStart(player);
+        } else if (phase == Phase.NIGHT) {
+            player.getInventory().clear();
+            role.onNightStart(player);
+        }
+    }
+
+    public void revealRolesToSender(CommandSender sender) {
+        sender.sendMessage(ChatColor.GOLD + "===== ROLE LIST =====");
+        for (GamePlayer gp : players) {
+            sender.sendMessage(ChatColor.GRAY + gp.getPlayer().getName() + " - " +
+                    (gp.isAlive() ? ChatColor.GREEN + "ALIVE" : ChatColor.RED + "DEAD") +
+                    ChatColor.GRAY + " - " + ChatColor.WHITE + gp.getRole().getName());
         }
     }
 

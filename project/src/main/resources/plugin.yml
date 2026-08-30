@@ -11,7 +11,7 @@ commands:
     aliases: [ww]
 permissions:
   werewolf.admin:
-    description: Allows admin commands (create/delete arenas, force start/stop)
+    description: Allows admin commands (create/delete arenas, force start/stop, debug mode)
     default: op
   werewolf.play:
     description: Allows joining arenas and playing

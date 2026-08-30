@@ -4,6 +4,7 @@ import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.arena.ArenaManager;
 import com.werewolf.game.util.WorldManager;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -15,6 +16,7 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class WerewolfCommand implements CommandExecutor, TabCompleter {
@@ -124,6 +126,50 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 handleForceStop(sender, args[1]);
+                break;
+            case "debug":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww debug <arena>");
+                    return true;
+                }
+                handleDebug(sender, args[1]);
+                break;
+            case "setrole":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 3) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww setrole <player> <role>");
+                    return true;
+                }
+                handleSetRole(sender, args[1], args[2]);
+                break;
+            case "skipday":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww skipday <arena>");
+                    return true;
+                }
+                handleSkipDay(sender, args[1]);
+                break;
+            case "reveal":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww reveal <arena>");
+                    return true;
+                }
+                handleReveal(sender, args[1]);
                 break;
             default:
                 sendHelp(sender);
@@ -256,12 +302,81 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.prefix() + ChatColor.RED + "Game already in progress!");
             return;
         }
-        if (arena.getPlayers().size() < 2) {
-            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Need at least 2 players to start!");
+        int minNeeded = arena.isDebugMode() ? 1 : 2;
+        if (arena.getPlayers().size() < minNeeded) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Need at least " + minNeeded + " players to start!");
             return;
         }
         arena.startGame();
         sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Game force started in arena " + arenaName + "!");
+    }
+
+    private void handleDebug(CommandSender sender, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        arena.setDebugMode(!arena.isDebugMode());
+        sender.sendMessage(plugin.prefix() + ChatColor.GOLD + "Debug mode for arena " + arenaName + ": " + (arena.isDebugMode() ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
+        if (arena.isDebugMode()) {
+            sender.sendMessage(plugin.prefix() + ChatColor.YELLOW + "You can now force start with 1 player, assign roles with /ww setrole, skip day with /ww skipday, and see all roles with /ww reveal.");
+        }
+    }
+
+    private void handleSetRole(CommandSender sender, String playerName, String roleName) {
+        Player target = Bukkit.getPlayer(playerName);
+        if (target == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Player " + playerName + " is not online!");
+            return;
+        }
+        Arena arena = plugin.getArenaManager().getArenaByPlayer(target);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Player " + playerName + " is not in an arena!");
+            return;
+        }
+        if (!arena.isDebugMode()) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Debug mode must be enabled for that arena first! Use /ww debug <arena>");
+            return;
+        }
+        List<String> validRoles = Arrays.asList("werewolf", "villager", "witch", "seer", "hunter", "lier");
+        if (!validRoles.contains(roleName.toLowerCase())) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Invalid role! Valid roles: " + String.join(", ", validRoles));
+            return;
+        }
+        arena.forceSetRole(target, roleName);
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Set " + target.getName() + "'s role to " + roleName + ".");
+    }
+
+    private void handleSkipDay(CommandSender sender, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        if (!arena.isDebugMode()) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Debug mode must be enabled for that arena first! Use /ww debug <arena>");
+            return;
+        }
+        if (arena.getPhase() != com.werewolf.game.game.Phase.DAY) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "It is not day time!");
+            return;
+        }
+        arena.skipDayFromCommand();
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped 1/3 of the remaining day time.");
+    }
+
+    private void handleReveal(CommandSender sender, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        if (!arena.isDebugMode()) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Debug mode must be enabled for that arena first! Use /ww debug <arena>");
+            return;
+        }
+        arena.revealRolesToSender(sender);
     }
 
     private void handleForceStop(CommandSender sender, String arenaName) {
@@ -286,6 +401,10 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GOLD + "/ww setspawn <arena>" + ChatColor.GRAY + " - Set game spawn location");
             sender.sendMessage(ChatColor.GOLD + "/ww forcestart <arena>" + ChatColor.GRAY + " - Force start a game");
             sender.sendMessage(ChatColor.GOLD + "/ww forcestop <arena>" + ChatColor.GRAY + " - Force stop a game");
+            sender.sendMessage(ChatColor.GOLD + "/ww debug <arena>" + ChatColor.GRAY + " - Toggle debug mode (1-player start, role control)");
+            sender.sendMessage(ChatColor.GOLD + "/ww setrole <player> <role>" + ChatColor.GRAY + " - Force-set a player's role (debug only)");
+            sender.sendMessage(ChatColor.GOLD + "/ww skipday <arena>" + ChatColor.GRAY + " - Skip 1/3 of day time (debug only)");
+            sender.sendMessage(ChatColor.GOLD + "/ww reveal <arena>" + ChatColor.GRAY + " - See all players' roles (debug only)");
         }
     }
 
@@ -304,6 +423,10 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
                 completions.add("setspawn");
                 completions.add("forcestart");
                 completions.add("forcestop");
+                completions.add("debug");
+                completions.add("setrole");
+                completions.add("skipday");
+                completions.add("reveal");
             }
         } else if (args.length == 2) {
             String sub = args[0].toLowerCase();
@@ -323,6 +446,13 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
                 }
             } else if (sub.equals("leave")) {
                 completions.add("");
+            } else if (sub.equals("setrole")) {
+                completions.add("werewolf");
+                completions.add("villager");
+                completions.add("witch");
+                completions.add("seer");
+                completions.add("hunter");
+                completions.add("lier");
             }
         }
         return completions;
