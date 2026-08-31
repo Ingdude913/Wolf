@@ -49,13 +49,21 @@ public class WorldManager {
         File serverWorldContainer = Bukkit.getWorldContainer();
         File targetFolder = new File(serverWorldContainer, worldName);
 
-        if (!targetFolder.exists()) {
-            try {
-                copyFolder(sourceFolder.toPath(), targetFolder.toPath());
-            } catch (IOException e) {
-                plugin.getLogger().severe("Could not copy world '" + worldName + "': " + e.getMessage());
-                return null;
-            }
+        try {
+            deleteRecursive(targetFolder.toPath());
+            File migratedRoot = new File(serverWorldContainer, "world");
+            File migratedDimension = new File(migratedRoot, "dimensions/minecraft/" + worldName);
+            deleteRecursive(migratedDimension.toPath());
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not clean stale world '" + worldName + "': " + e.getMessage());
+            return null;
+        }
+
+        try {
+            copyFolder(sourceFolder.toPath(), targetFolder.toPath());
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not copy world '" + worldName + "': " + e.getMessage());
+            return null;
         }
 
         WorldCreator creator = new WorldCreator(worldName);
@@ -88,6 +96,23 @@ public class WorldManager {
                 Path relative = source.relativize(file);
                 Path dest = target.resolve(relative);
                 Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    private void deleteRecursive(Path path) throws IOException {
+        if (!Files.exists(path)) return;
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
                 return FileVisitResult.CONTINUE;
             }
         });
