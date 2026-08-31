@@ -110,6 +110,14 @@ public class PlayerInteractListener implements Listener {
                 return;
             }
 
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "ninja-ability")) {
+                event.setCancelled(true);
+                if (arena.getPhase() == Phase.NIGHT) {
+                    arena.ninjaExecuteAbility(player);
+                }
+                return;
+            }
+
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "wolf-team")) {
                 event.setCancelled(true);
                 if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {

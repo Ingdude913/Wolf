@@ -46,6 +46,7 @@ public class Arena {
     private final Map<UUID, UUID> hunterTargets = new HashMap<>();
 
     private boolean debugMode = false;
+    private boolean firstDay = true;
 
     private BossBar bossBar = null;
     private int actionBarTaskId = -1;
@@ -215,7 +216,8 @@ public class Arena {
     public void startGame() {
         assignRoles();
         phase = Phase.DAY;
-        broadcast(ChatColor.GREEN + "The game has begun! It is DAY time. Discuss and vote!");
+        firstDay = true;
+        broadcast(ChatColor.GREEN + "The game has begun! It is DAY time. Discuss and get to know each other!");
         teleportPlayersToSpawn();
         giveDayItems();
         for (GamePlayer gp : players) {
@@ -291,8 +293,10 @@ public class Arena {
         for (GamePlayer gp : getAlivePlayers()) {
             Player p = gp.getPlayer();
             p.getInventory().clear();
-            p.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
-            p.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+            if (!firstDay) {
+                p.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
+                p.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+            }
             p.getInventory().setItem(2, ItemBuilder.create(plugin, "skip-day"));
             giveInfoItems(gp);
         }
@@ -311,6 +315,14 @@ public class Arena {
         phase = Phase.DAY;
         phaseTimer = dayDuration;
         setWorldTime(6000);
+
+        for (GamePlayer gp : getAlivePlayers()) {
+            Player p = gp.getPlayer();
+            for (PotionEffect effect : p.getActivePotionEffects()) {
+                p.removePotionEffect(effect.getType());
+            }
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+        }
 
         createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
         startActionBar();
@@ -445,6 +457,7 @@ public class Arena {
     private void endNightPhase() {
         processNightDeaths();
         if (checkWinCondition()) return;
+        firstDay = false;
         startDayPhase();
         giveDayItems();
         for (GamePlayer gp : getAlivePlayers()) {
@@ -799,8 +812,10 @@ public class Arena {
 
         if (phase == Phase.DAY) {
             player.getInventory().clear();
-            player.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
-            player.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+            if (!firstDay) {
+                player.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
+                player.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+            }
             player.getInventory().setItem(2, ItemBuilder.create(plugin, "skip-day"));
             giveInfoItems(gp);
             role.onDayStart(player);
@@ -882,7 +897,7 @@ public class Arena {
         }
     }
 
-    public void ninjaUseAbility(Player player, String ability) {
+    public void ninjaSelectAbility(Player player, String ability) {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null || !gp.isAlive()) return;
         NinjaRole ninjaRole = gp.asNinja();
@@ -891,8 +906,29 @@ public class Arena {
             player.sendMessage(plugin.prefix() + ChatColor.RED + "You have already used your ability tonight!");
             return;
         }
+        ninjaRole.setSelectedAbility(ability);
+        player.getInventory().setItem(3, ItemBuilder.create(plugin, "ninja-ability"));
+        String abilityName = ability.substring(0, 1).toUpperCase() + ability.substring(1);
+        player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You selected: " + ChatColor.WHITE + abilityName + ChatColor.DARK_PURPLE + "! Right-click your Ninja Orb to activate it.");
+    }
+
+    public void ninjaExecuteAbility(Player player) {
+        GamePlayer gp = getGamePlayer(player);
+        if (gp == null || !gp.isAlive()) return;
+        NinjaRole ninjaRole = gp.asNinja();
+        if (ninjaRole == null) return;
+        if (ninjaRole.hasUsedAbilityTonight()) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You have already used your ability tonight!");
+            return;
+        }
+        String ability = ninjaRole.getSelectedAbility();
+        if (ability == null) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "Use your Ninja Book to select an ability first!");
+            return;
+        }
         ninjaRole.setAbilityUsedTonight(true);
         player.getInventory().removeItem(ItemBuilder.create(plugin, "ninja-book"));
+        player.getInventory().removeItem(ItemBuilder.create(plugin, "ninja-ability"));
 
         int durationTicks = 160;
 

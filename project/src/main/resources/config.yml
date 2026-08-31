@@ -68,4 +68,7 @@ items:
     name: "&4&lWolf Team &7(Right-click to see teammates)"
   ninja-book:
     material: ENCHANTED_BOOK
-    name: "&5&lNinja Abilities &7(Right-click to select an ability)"
+    name: "&5&lNinja Book &7(Right-click to select an ability)"
+  ninja-ability:
+    material: ENDER_EYE
+    name: "&5&lNinja Orb &7(Right-click to activate your selected ability)"

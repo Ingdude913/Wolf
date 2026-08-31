@@ -62,7 +62,7 @@ public class InventoryClickListener implements Listener {
             String ability = NinjaGUI.getAbilityAtSlot(player, slot);
             if (ability == null) return;
 
-            arena.ninjaUseAbility(player, ability);
+            arena.ninjaSelectAbility(player, ability);
             player.closeInventory();
         } else if (InfoGUI.isInfoGUI(title)) {
             event.setCancelled(true);

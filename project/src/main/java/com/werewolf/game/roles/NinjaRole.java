@@ -13,12 +13,14 @@ import java.util.List;
 public class NinjaRole extends Role {
 
     private boolean abilityUsedTonight = false;
+    private String selectedAbility = null;
 
     public NinjaRole() {
         super("Ninja", Team.GOOD,
-                "You are a Ninja! Each night, you can use your ability book to choose one of four abilities: " +
+                "You are a Ninja! Each night, use your ability book to choose one of four abilities: " +
                         "Vanish (become invisible for a short time), Sprint (run very fast for a short time), " +
                         "Decoy (spawn a fake copy of yourself), or Disguise (appear as a fake wolf that won't show on the wolf team list). " +
+                        "Then right-click your Ninja Orb to activate the chosen ability. " +
                         "You can only use ONE ability per night, and each lasts only a few seconds. " +
                         "Choose wisely!");
     }
@@ -26,7 +28,8 @@ public class NinjaRole extends Role {
     @Override
     public void onNightStart(Player player) {
         abilityUsedTonight = false;
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&5Night falls! You may use your Ninja ability book."));
+        selectedAbility = null;
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&5Night falls! Use your Ninja Book to select an ability, then use the Ninja Orb to activate it."));
         player.getInventory().addItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "ninja-book"));
     }
 
@@ -34,6 +37,7 @@ public class NinjaRole extends Role {
     public void onDayStart(Player player) {
         player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Your ninja abilities are no longer available."));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "ninja-book"));
+        player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "ninja-ability"));
     }
 
     @Override
@@ -49,6 +53,14 @@ public class NinjaRole extends Role {
 
     public void setAbilityUsedTonight(boolean used) {
         this.abilityUsedTonight = used;
+    }
+
+    public String getSelectedAbility() {
+        return selectedAbility;
+    }
+
+    public void setSelectedAbility(String ability) {
+        this.selectedAbility = ability;
     }
 
     @Override
