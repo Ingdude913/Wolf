@@ -23,11 +23,54 @@ public class ArenaManager {
     private final WorldManager worldManager;
     private File arenasFile;
     private FileConfiguration arenasConfig;
+    private Location globalLobby;
 
     public ArenaManager(WerewolfPlugin plugin) {
         this.plugin = plugin;
         this.worldManager = new WorldManager(plugin);
         loadArenasFile();
+        loadGlobalLobby();
+    }
+
+    public Location getGlobalLobby() {
+        return globalLobby;
+    }
+
+    public void setGlobalLobby(Location loc) {
+        this.globalLobby = loc;
+        if (loc != null) {
+            arenasConfig.set("global-lobby.world", loc.getWorld().getName());
+            arenasConfig.set("global-lobby.x", loc.getX());
+            arenasConfig.set("global-lobby.y", loc.getY());
+            arenasConfig.set("global-lobby.z", loc.getZ());
+            arenasConfig.set("global-lobby.yaw", loc.getYaw());
+            arenasConfig.set("global-lobby.pitch", loc.getPitch());
+        } else {
+            arenasConfig.set("global-lobby", null);
+        }
+        saveArenasFile();
+    }
+
+    private void loadGlobalLobby() {
+        ConfigurationSection section = arenasConfig.getConfigurationSection("global-lobby");
+        if (section == null) return;
+        String worldName = section.getString("world");
+        if (worldName == null) return;
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            world = worldManager.loadWorld(worldName);
+        }
+        if (world == null) {
+            plugin.getLogger().warning("Could not load world '" + worldName + "' for global lobby.");
+            return;
+        }
+        double x = section.getDouble("x");
+        double y = section.getDouble("y");
+        double z = section.getDouble("z");
+        float yaw = (float) section.getDouble("yaw", 0);
+        float pitch = (float) section.getDouble("pitch", 0);
+        globalLobby = new Location(world, x, y, z, yaw, pitch);
+        plugin.getLogger().info("Loaded global lobby in world '" + worldName + "'.");
     }
 
     public WorldManager getWorldManager() {

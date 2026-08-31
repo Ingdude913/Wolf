@@ -88,11 +88,11 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
                     return true;
                 }
-                if (args.length < 2) {
-                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww setlobby <arena>");
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Only players can use this command.");
                     return true;
                 }
-                handleSetLobby((Player) sender, args[1]);
+                handleSetLobby((Player) sender);
                 break;
             case "setspawn":
                 if (!sender.hasPermission("werewolf.admin")) {
@@ -268,7 +268,8 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
         player.teleport(world.getSpawnLocation());
         sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Arena " + worldName + " created with world " + worldName + "!");
         sender.sendMessage(plugin.prefix() + ChatColor.YELLOW + "You have been teleported to the world for setup.");
-        sender.sendMessage(plugin.prefix() + ChatColor.YELLOW + "Use /ww setlobby " + worldName + " and /ww setspawn " + worldName + " to set locations.");
+        sender.sendMessage(plugin.prefix() + ChatColor.YELLOW + "Use /ww setspawn " + worldName + " to set the game spawn location.");
+        sender.sendMessage(plugin.prefix() + ChatColor.YELLOW + "Use /ww setlobby to set the global lobby where players wait and return after games.");
     }
 
     private void handleDelete(CommandSender sender, String arenaName) {
@@ -281,15 +282,9 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Arena " + arenaName + " deleted.");
     }
 
-    private void handleSetLobby(Player player, String arenaName) {
-        Arena arena = plugin.getArenaManager().getArena(arenaName);
-        if (arena == null) {
-            player.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
-            return;
-        }
-        arena.setLobbyLocation(player.getLocation());
-        plugin.getArenaManager().saveArena(arena);
-        player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Lobby location set for arena " + arenaName + "!");
+    private void handleSetLobby(Player player) {
+        plugin.getArenaManager().setGlobalLobby(player.getLocation());
+        player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Global lobby location set! Players will be teleported here when they join the server and when a game ends.");
     }
 
     private void handleSetSpawn(Player player, String arenaName) {
@@ -422,8 +417,8 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
         if (sender.hasPermission("werewolf.admin")) {
             sender.sendMessage(ChatColor.GOLD + "/ww create <world>" + ChatColor.GRAY + " - Create a new arena from a world folder");
             sender.sendMessage(ChatColor.GOLD + "/ww delete <arena>" + ChatColor.GRAY + " - Delete an arena");
-            sender.sendMessage(ChatColor.GOLD + "/ww setlobby <arena>" + ChatColor.GRAY + " - Set lobby location");
-            sender.sendMessage(ChatColor.GOLD + "/ww setspawn <arena>" + ChatColor.GRAY + " - Set game spawn location");
+            sender.sendMessage(ChatColor.GOLD + "/ww setlobby" + ChatColor.GRAY + " - Set the global lobby location (players spawn here)");
+            sender.sendMessage(ChatColor.GOLD + "/ww setspawn <arena>" + ChatColor.GRAY + " - Set arena game spawn location");
             sender.sendMessage(ChatColor.GOLD + "/ww forcestart <arena>" + ChatColor.GRAY + " - Force start a game");
             sender.sendMessage(ChatColor.GOLD + "/ww forcestop <arena>" + ChatColor.GRAY + " - Force stop a game");
             sender.sendMessage(ChatColor.GOLD + "/ww debug <arena>" + ChatColor.GRAY + " - Toggle debug mode (1-player start, role control)");
@@ -457,7 +452,7 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 2) {
             String sub = args[0].toLowerCase();
-            if (sub.equals("join") || sub.equals("delete") || sub.equals("setlobby") ||
+            if (sub.equals("join") || sub.equals("delete") ||
                     sub.equals("setspawn") || sub.equals("forcestart") || sub.equals("forcestop") ||
                     sub.equals("skipday") || sub.equals("skipnight") || sub.equals("reveal") || sub.equals("debug")) {
                 for (Arena arena : plugin.getArenaManager().getArenas()) {

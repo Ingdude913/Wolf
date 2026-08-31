@@ -193,7 +193,12 @@ public class Arena {
 
         player.getInventory().clear();
         player.setGameMode(GameMode.SURVIVAL);
-        player.teleport(player.getWorld().getSpawnLocation());
+        Location lobby = plugin.getArenaManager().getGlobalLobby();
+        if (lobby != null) {
+            player.teleport(lobby);
+        } else {
+            player.teleport(player.getWorld().getSpawnLocation());
+        }
 
         broadcast(ChatColor.YELLOW + player.getName() + " left the arena! (" + players.size() + "/" + 16 + ")");
 
@@ -742,7 +747,10 @@ public class Arena {
             p.sendMessage(plugin.prefix() + ChatColor.GRAY + "You were the " + gp.getRole().getName() + ".");
             p.setGameMode(GameMode.SURVIVAL);
             p.getInventory().clear();
-            if (lobbyLocation != null) {
+            Location lobby = plugin.getArenaManager().getGlobalLobby();
+            if (lobby != null) {
+                p.teleport(lobby);
+            } else if (lobbyLocation != null) {
                 p.teleport(lobbyLocation);
             }
         }
@@ -770,7 +778,10 @@ public class Arena {
             Player p = gp.getPlayer();
             p.setGameMode(GameMode.SURVIVAL);
             p.getInventory().clear();
-            if (lobbyLocation != null) {
+            Location lobby = plugin.getArenaManager().getGlobalLobby();
+            if (lobby != null) {
+                p.teleport(lobby);
+            } else if (lobbyLocation != null) {
                 p.teleport(lobbyLocation);
             }
         }
