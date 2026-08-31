@@ -322,6 +322,7 @@ public class Arena {
                 p.removePotionEffect(effect.getType());
             }
             p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            gp.setTransformed(false);
         }
 
         createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
@@ -427,6 +428,11 @@ public class Arena {
 
         for (GamePlayer gp : getAlivePlayers()) {
             Player p = gp.getPlayer();
+            for (PotionEffect effect : p.getActivePotionEffects()) {
+                p.removePotionEffect(effect.getType());
+            }
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            gp.setTransformed(false);
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
             giveInfoItems(gp);
@@ -973,7 +979,8 @@ public class Arena {
                 inv.setChestplate(fakeChest);
                 inv.setLeggings(fakeLegs);
                 inv.setBoots(fakeBoots);
-                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You won't appear on the wolf team list.");
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You are invisible and won't appear on the wolf team list.");
                 new BukkitRunnable() {
                     @Override
                     public void run() {
