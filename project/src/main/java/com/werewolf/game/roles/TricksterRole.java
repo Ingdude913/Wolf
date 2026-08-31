@@ -10,11 +10,11 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LierRole extends Role {
+public class TricksterRole extends Role {
 
-    public LierRole() {
-        super("Lier", Team.GOOD,
-                "You are the Lier! You are NOT a werewolf, but you can pretend to be one. " +
+    public TricksterRole() {
+        super("Trickster", Team.GOOD,
+                "You are the Trickster! You are NOT a werewolf, but you can pretend to be one. " +
                         "Real werewolves see you as a teammate, but they don't know you are fake. " +
                         "During the night, you get the same werewolf ability items, but your axe cannot kill. " +
                         "Use your deception to confuse the werewolves and help the good team win!");
@@ -26,7 +26,7 @@ public class LierRole extends Role {
         player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&7You receive werewolf items to blend in, but your axe is fake and cannot kill."));
         ItemStack armor = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor");
         ItemStack axe = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe");
-        axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7&(Cannot kill)");
+        axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7(Cannot kill)");
         player.getInventory().addItem(armor, axe);
     }
 
@@ -45,7 +45,7 @@ public class LierRole extends Role {
     }
 
     @Override
-    public boolean isLier() {
+    public boolean isTrickster() {
         return true;
     }
 

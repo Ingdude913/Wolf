@@ -91,7 +91,7 @@ public class PlayerDamageListener implements Listener {
                 if (attackerGp.getRole().isWerewolf()) {
                     arena.werewolfKill(attacker, target);
                     return;
-                } else if (attackerGp.getRole().isLier()) {
+                } else if (attackerGp.getRole().isTrickster()) {
                     event.setCancelled(true);
                     attacker.sendMessage(plugin.prefix() + ChatColor.RED + "Your axe is fake! It cannot kill.");
                     return;

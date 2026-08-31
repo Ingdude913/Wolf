@@ -30,24 +30,26 @@ public class InfoGUI {
 
         int total = arena.getPlayers().size();
         long werewolves = arena.getPlayers().stream().filter(gp -> gp.getRole().isWerewolf()).count();
-        long liers = arena.getPlayers().stream().filter(gp -> gp.getRole().isLier()).count();
+        long tricksters = arena.getPlayers().stream().filter(gp -> gp.getRole().isTrickster()).count();
         long witches = arena.getPlayers().stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.WitchRole).count();
         long seers = arena.getPlayers().stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.SeerRole).count();
         long hunters = arena.getPlayers().stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.HunterRole).count();
         long villagers = arena.getPlayers().stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.VillagerRole).count();
+        long ninjas = arena.getPlayers().stream().filter(gp -> gp.getRole().isNinja()).count();
 
         inv.setItem(0, createInfoItem(Material.IRON_SWORD, "&cWerewolves", "&7Count: &f" + werewolves));
-        inv.setItem(1, createInfoItem(Material.PAPER, "&dLiers", "&7Count: &f" + liers));
+        inv.setItem(1, createInfoItem(Material.PAPER, "&dTricksters", "&7Count: &f" + tricksters));
         inv.setItem(2, createInfoItem(Material.POTION, "&5Witches", "&7Count: &f" + witches));
         inv.setItem(3, createInfoItem(Material.BOOK, "&9Seers", "&7Count: &f" + seers));
         inv.setItem(4, createInfoItem(Material.COMPASS, "&6Hunters", "&7Count: &f" + hunters));
         inv.setItem(5, createInfoItem(Material.STICK, "&aVillagers", "&7Count: &f" + villagers));
-        inv.setItem(6, createInfoItem(Material.PLAYER_HEAD, "&fTotal Players", "&7Count: &f" + total));
+        inv.setItem(6, createInfoItem(Material.ENDER_PEARL, "&5Ninjas", "&7Count: &f" + ninjas));
+        inv.setItem(7, createInfoItem(Material.PLAYER_HEAD, "&fTotal Players", "&7Count: &f" + total));
 
         int dayDur = plugin.getConfig().getInt("day-duration", 120);
         int nightDur = plugin.getConfig().getInt("night-duration", 60);
-        inv.setItem(7, createInfoItem(Material.CLOCK, "&eDay Duration", "&7" + dayDur + " seconds"));
-        inv.setItem(8, createInfoItem(Material.CLOCK, "&9Night Duration", "&7" + nightDur + " seconds"));
+        inv.setItem(8, createInfoItem(Material.CLOCK, "&eDay Duration", "&7" + dayDur + " seconds"));
+        inv.setItem(9, createInfoItem(Material.CLOCK, "&9Night Duration", "&7" + nightDur + " seconds"));
 
         openGUIs.put(player, "setup");
         player.openInventory(inv);
@@ -58,12 +60,12 @@ public class InfoGUI {
 
         int slot = 0;
         for (GamePlayer gp : arena.getPlayers()) {
-            if (gp.getRole().isWerewolf() || gp.getRole().isLier()) {
+            if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
                 ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
                 SkullMeta meta = (SkullMeta) skull.getItemMeta();
                 if (meta != null) {
                     meta.setOwningPlayer(gp.getPlayer());
-                    String nameColor = gp.getRole().isWerewolf() ? ChatColor.RED + gp.getPlayer().getName() : ChatColor.GOLD + gp.getPlayer().getName() + " (Lier)";
+                    String nameColor = gp.getRole().isWerewolf() ? ChatColor.RED + gp.getPlayer().getName() : ChatColor.GOLD + gp.getPlayer().getName() + " (Trickster)";
                     meta.setDisplayName(nameColor);
                     List<String> lore = new ArrayList<>();
                     lore.add(ChatColor.GRAY + gp.getRole().getName());

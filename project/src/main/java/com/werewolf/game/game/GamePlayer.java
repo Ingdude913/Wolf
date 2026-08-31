@@ -85,8 +85,13 @@ public class GamePlayer {
         return null;
     }
 
-    public LierRole asLier() {
-        if (role instanceof LierRole) return (LierRole) role;
+    public TricksterRole asTrickster() {
+        if (role instanceof TricksterRole) return (TricksterRole) role;
+        return null;
+    }
+
+    public NinjaRole asNinja() {
+        if (role instanceof NinjaRole) return (NinjaRole) role;
         return null;
     }
 }

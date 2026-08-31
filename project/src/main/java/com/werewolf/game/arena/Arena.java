@@ -14,6 +14,7 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -235,17 +236,18 @@ public class Arena {
 
         int total = playerList.size();
         int werewolfCount = Math.max(1, total / 4);
-        int lierCount = total >= 6 ? 1 : 0;
+        int tricksterCount = total >= 6 ? 1 : 0;
         int witchCount = total >= 4 ? 1 : 0;
         int seerCount = total >= 4 ? 1 : 0;
         int hunterCount = total >= 5 ? 1 : 0;
+        int ninjaCount = total >= 6 ? 1 : 0;
 
         int index = 0;
         for (int i = 0; i < werewolfCount && index < total; i++) {
             playerList.get(index++).setRole(new WerewolfRole());
         }
-        for (int i = 0; i < lierCount && index < total; i++) {
-            playerList.get(index++).setRole(new LierRole());
+        for (int i = 0; i < tricksterCount && index < total; i++) {
+            playerList.get(index++).setRole(new TricksterRole());
         }
         for (int i = 0; i < witchCount && index < total; i++) {
             playerList.get(index++).setRole(new WitchRole());
@@ -256,13 +258,16 @@ public class Arena {
         for (int i = 0; i < hunterCount && index < total; i++) {
             playerList.get(index++).setRole(new HunterRole());
         }
+        for (int i = 0; i < ninjaCount && index < total; i++) {
+            playerList.get(index++).setRole(new NinjaRole());
+        }
         while (index < total) {
             playerList.get(index++).setRole(new VillagerRole());
         }
 
         List<String> werewolfNames = new ArrayList<>();
         for (GamePlayer gp : players) {
-            if (gp.getRole().isWerewolf() || gp.getRole().isLier()) {
+            if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
                 werewolfNames.add(gp.getPlayer().getName());
             }
         }
@@ -297,7 +302,7 @@ public class Arena {
         Player p = gp.getPlayer();
         p.getInventory().setItem(7, ItemBuilder.create(plugin, "setup-info"));
         p.getInventory().setItem(8, ItemBuilder.create(plugin, "role-info-book"));
-        if (gp.getRole().isWerewolf() || gp.getRole().isLier()) {
+        if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
             p.getInventory().setItem(6, ItemBuilder.create(plugin, "wolf-team"));
         }
     }
@@ -563,7 +568,7 @@ public class Arena {
         seerRole.setCheckedTonight(true);
         Team team = targetGp.getRole().getTeam();
         String teamName;
-        if (targetGp.getRole().isLier()) {
+        if (targetGp.getRole().isTrickster()) {
             teamName = ChatColor.RED + "BAD";
         } else if (team == Team.BAD) {
             teamName = ChatColor.RED + "BAD";
@@ -590,7 +595,7 @@ public class Arena {
     public void werewolfTransform(Player player) {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null || !gp.isAlive()) return;
-        if (!gp.getRole().isWerewolf() && !gp.getRole().isLier()) return;
+        if (!gp.getRole().isWerewolf() && !gp.getRole().isTrickster()) return;
         PlayerInventory inv = player.getInventory();
 
         if (gp.isTransformed()) {
@@ -599,6 +604,7 @@ public class Arena {
             inv.setLeggings(null);
             inv.setBoots(null);
             player.removePotionEffect(PotionEffectType.SPEED);
+            player.removePotionEffect(PotionEffectType.INVISIBILITY);
             inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
             gp.setTransformed(false);
             player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
@@ -616,7 +622,7 @@ public class Arena {
         inv.setBoots(boots);
 
         ItemStack axe = ItemBuilder.create(plugin, "werewolf-axe");
-        if (gp.getRole().isLier()) {
+        if (gp.getRole().isTrickster()) {
             axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7(Cannot kill)");
         }
         if (!inv.contains(axe)) {
@@ -624,6 +630,7 @@ public class Arena {
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
         gp.setTransformed(true);
         player.sendMessage(plugin.prefix() + ChatColor.RED + "You transform into a werewolf!");
     }
@@ -777,8 +784,11 @@ public class Arena {
             case "hunter":
                 role = new HunterRole();
                 break;
-            case "lier":
-                role = new LierRole();
+            case "trickster":
+                role = new TricksterRole();
+                break;
+            case "ninja":
+                role = new NinjaRole();
                 break;
             default:
                 return;
@@ -869,6 +879,79 @@ public class Arena {
         if (actionBarTaskId != -1) {
             Bukkit.getScheduler().cancelTask(actionBarTaskId);
             actionBarTaskId = -1;
+        }
+    }
+
+    public void ninjaUseAbility(Player player, String ability) {
+        GamePlayer gp = getGamePlayer(player);
+        if (gp == null || !gp.isAlive()) return;
+        NinjaRole ninjaRole = gp.asNinja();
+        if (ninjaRole == null) return;
+        if (ninjaRole.hasUsedAbilityTonight()) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You have already used your ability tonight!");
+            return;
+        }
+        ninjaRole.setAbilityUsedTonight(true);
+        player.getInventory().removeItem(ItemBuilder.create(plugin, "ninja-book"));
+
+        int durationTicks = 160;
+
+        switch (ability) {
+            case "vanish":
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You vanish into the shadows for 8 seconds!");
+                break;
+            case "sprint":
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, 4, false, false));
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You feel a burst of speed for 8 seconds!");
+                break;
+            case "decoy":
+                Location loc = player.getLocation();
+                ArmorStand decoy = loc.getWorld().spawn(loc, ArmorStand.class);
+                decoy.setVisible(false);
+                decoy.setCustomName(player.getName());
+                decoy.setCustomNameVisible(true);
+                decoy.setGravity(false);
+                decoy.setMarker(true);
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You spawned a decoy for 8 seconds!");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (decoy != null && !decoy.isDead()) {
+                            decoy.remove();
+                        }
+                    }
+                }.runTaskLater(plugin, durationTicks);
+                break;
+            case "disguise":
+                ItemStack fakeHelmet = new ItemStack(Material.NETHERITE_HELMET);
+                ItemStack fakeChest = new ItemStack(Material.NETHERITE_CHESTPLATE);
+                ItemStack fakeLegs = new ItemStack(Material.NETHERITE_LEGGINGS);
+                ItemStack fakeBoots = new ItemStack(Material.NETHERITE_BOOTS);
+                PlayerInventory inv = player.getInventory();
+                ItemStack oldHelmet = inv.getHelmet();
+                ItemStack oldChest = inv.getChestplate();
+                ItemStack oldLegs = inv.getLeggings();
+                ItemStack oldBoots = inv.getBoots();
+                inv.setHelmet(fakeHelmet);
+                inv.setChestplate(fakeChest);
+                inv.setLeggings(fakeLegs);
+                inv.setBoots(fakeBoots);
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You won't appear on the wolf team list.");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (player.isOnline()) {
+                            inv.setHelmet(oldHelmet);
+                            inv.setChestplate(oldChest);
+                            inv.setLeggings(oldLegs);
+                            inv.setBoots(oldBoots);
+                        }
+                    }
+                }.runTaskLater(plugin, durationTicks);
+                break;
+            default:
+                break;
         }
     }
 

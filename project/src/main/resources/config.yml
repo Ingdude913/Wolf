@@ -25,7 +25,8 @@ role-weights:
   witch: 1
   seer: 1
   hunter: 1
-  lier: 1
+  trickster: 1
+  ninja: 1
 
 # Items
 items:
@@ -65,3 +66,6 @@ items:
   wolf-team:
     material: RED_WOOL
     name: "&4&lWolf Team &7(Right-click to see teammates)"
+  ninja-book:
+    material: ENCHANTED_BOOK
+    name: "&5&lNinja Abilities &7(Right-click to select an ability)"

@@ -40,7 +40,11 @@ public abstract class Role {
         return false;
     }
 
-    public boolean isLier() {
+    public boolean isTrickster() {
+        return false;
+    }
+
+    public boolean isNinja() {
         return false;
     }
 
