@@ -2,6 +2,7 @@ package com.werewolf.game.roles;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.Team;
+import com.werewolf.game.util.ColorUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -17,12 +18,12 @@ public class VillagerRole extends Role {
 
     @Override
     public void onNightStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&9Night falls! Stay safe and hope the werewolves don't find you.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&9Night falls! Stay safe and hope the werewolves don't find you."));
     }
 
     @Override
     public void onDayStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&eDay breaks! Discuss and vote to eliminate suspected werewolves.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Discuss and vote to eliminate suspected werewolves."));
     }
 
     @Override

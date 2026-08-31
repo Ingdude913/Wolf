@@ -2,6 +2,7 @@ package com.werewolf.game.roles;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.Team;
+import com.werewolf.game.util.ColorUtil;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -24,13 +25,13 @@ public class HunterRole extends Role {
     @Override
     public void onNightStart(Player player) {
         targetLocked = false;
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&6Night falls! You may select a target with your compass.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&6Night falls! You may select a target with your compass."));
         player.getInventory().addItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "hunter-target"));
     }
 
     @Override
     public void onDayStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&eDay breaks! Your target selection is locked.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Your target selection is locked."));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "hunter-target"));
         targetLocked = true;
     }

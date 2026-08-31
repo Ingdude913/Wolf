@@ -2,6 +2,7 @@ package com.werewolf.game.roles;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.Team;
+import com.werewolf.game.util.ColorUtil;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -23,7 +24,7 @@ public class WitchRole extends Role {
 
     @Override
     public void onNightStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&dNight falls! You may use your potions.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&dNight falls! You may use your potions."));
         if (!poisonUsed) {
             player.getInventory().addItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "witch-poison"));
         }
@@ -34,7 +35,7 @@ public class WitchRole extends Role {
 
     @Override
     public void onDayStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&eDay breaks! Your potions cannot be used during the day.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Your potions cannot be used during the day."));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "witch-poison"));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "witch-heal"));
     }

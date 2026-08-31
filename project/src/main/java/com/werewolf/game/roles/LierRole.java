@@ -2,6 +2,7 @@ package com.werewolf.game.roles;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.Team;
+import com.werewolf.game.util.ColorUtil;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -21,8 +22,8 @@ public class LierRole extends Role {
 
     @Override
     public void onNightStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&cNight falls! The werewolves think you are one of them.");
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&7You receive werewolf items to blend in, but your axe is fake and cannot kill.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&cNight falls! The werewolves think you are one of them."));
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&7You receive werewolf items to blend in, but your axe is fake and cannot kill."));
         ItemStack armor = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor");
         ItemStack axe = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe");
         axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7&(Cannot kill)");
@@ -31,7 +32,7 @@ public class LierRole extends Role {
 
     @Override
     public void onDayStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&eDay breaks! Your deception items are removed.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Your deception items are removed."));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor"));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe"));
     }

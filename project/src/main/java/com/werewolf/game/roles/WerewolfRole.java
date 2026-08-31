@@ -2,6 +2,7 @@ package com.werewolf.game.roles;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.Team;
+import com.werewolf.game.util.ColorUtil;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -21,14 +22,14 @@ public class WerewolfRole extends Role {
 
     @Override
     public void onNightStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&cNight falls! You can now use your werewolf abilities.");
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&7Right-click your Werewolf Armor to transform. Right-click again to untransform and go invisible briefly.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&cNight falls! You can now use your werewolf abilities."));
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&7Right-click your Werewolf Armor to transform. Right-click again to untransform and go invisible briefly."));
         giveAbilityItem(player);
     }
 
     @Override
     public void onDayStart(Player player) {
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + "&eDay breaks! Hide your identity and blend in with the villagers.");
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Hide your identity and blend in with the villagers."));
         removeWerewolfGear(player);
     }
 

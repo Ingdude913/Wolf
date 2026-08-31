@@ -65,6 +65,6 @@ public class WerewolfPlugin extends JavaPlugin {
     }
 
     public String prefix() {
-        return getConfig().getString("prefix", "&8[&cWerewolf&8] &r");
+        return com.werewolf.game.util.ColorUtil.color(getConfig().getString("prefix", "&8[&cWerewolf&8] &r"));
     }
 }
