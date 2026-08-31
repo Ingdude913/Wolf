@@ -4,9 +4,15 @@ import com.werewolf.game.WerewolfPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
-import org.bukkit.WorldType;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 
 public class WorldManager {
 
@@ -39,14 +45,25 @@ public class WorldManager {
             return world;
         }
 
-        File worldFolder = new File(getWorldsFolder(), worldName);
+        File sourceFolder = new File(getWorldsFolder(), worldName);
+        File serverWorldContainer = Bukkit.getWorldContainer();
+        File targetFolder = new File(serverWorldContainer, worldName);
+
+        if (!targetFolder.exists()) {
+            try {
+                copyFolder(sourceFolder.toPath(), targetFolder.toPath());
+            } catch (IOException e) {
+                plugin.getLogger().severe("Could not copy world '" + worldName + "': " + e.getMessage());
+                return null;
+            }
+        }
+
         WorldCreator creator = new WorldCreator(worldName);
         creator.environment(World.Environment.NORMAL);
-        creator.type(WorldType.FLAT);
         world = creator.createWorld();
 
         if (world != null) {
-            plugin.getLogger().info("Loaded world '" + worldName + "' from " + worldFolder.getPath());
+            plugin.getLogger().info("Loaded world '" + worldName + "' from " + sourceFolder.getPath());
         }
 
         return world;
@@ -54,5 +71,25 @@ public class WorldManager {
 
     public World getOrLoadWorld(String worldName) {
         return loadWorld(worldName);
+    }
+
+    private void copyFolder(Path source, Path target) throws IOException {
+        Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                Path relative = source.relativize(dir);
+                Path dest = target.resolve(relative);
+                Files.createDirectories(dest);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Path relative = source.relativize(file);
+                Path dest = target.resolve(relative);
+                Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 }
