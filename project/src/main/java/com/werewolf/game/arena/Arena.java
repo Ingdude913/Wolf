@@ -164,7 +164,9 @@ public class Arena {
         player.sendMessage(plugin.prefix() + ChatColor.GREEN + "You joined arena " + ChatColor.GOLD + name + ChatColor.GREEN + "!");
         broadcast(ChatColor.GREEN + player.getName() + " joined the arena! (" + players.size() + "/" + 16 + ")");
 
-        if (lobbyLocation != null) {
+        if (spawnLocation != null) {
+            player.teleport(spawnLocation);
+        } else if (lobbyLocation != null) {
             player.teleport(lobbyLocation);
         }
         player.setGameMode(GameMode.ADVENTURE);
