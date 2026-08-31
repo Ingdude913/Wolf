@@ -374,7 +374,7 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             return;
         }
         arena.skipDayFromCommand();
-        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped 1/3 of the remaining day time.");
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped the remaining day time.");
     }
 
     private void handleSkipNight(CommandSender sender, String arenaName) {
@@ -388,7 +388,7 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             return;
         }
         arena.skipNightFromCommand();
-        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped 1/3 of the remaining night time.");
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped the remaining night time.");
     }
 
     private void handleReveal(CommandSender sender, String arenaName) {
@@ -428,8 +428,8 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GOLD + "/ww forcestop <arena>" + ChatColor.GRAY + " - Force stop a game");
             sender.sendMessage(ChatColor.GOLD + "/ww debug <arena>" + ChatColor.GRAY + " - Toggle debug mode (1-player start, role control)");
             sender.sendMessage(ChatColor.GOLD + "/ww setrole <player> <role>" + ChatColor.GRAY + " - Force-set a player's role (debug only)");
-            sender.sendMessage(ChatColor.GOLD + "/ww skipday <arena>" + ChatColor.GRAY + " - Skip 1/3 of day time (debug only)");
-            sender.sendMessage(ChatColor.GOLD + "/ww skipnight <arena>" + ChatColor.GRAY + " - Skip 1/3 of night time");
+            sender.sendMessage(ChatColor.GOLD + "/ww skipday <arena>" + ChatColor.GRAY + " - Skip the remaining day time (debug only)");
+            sender.sendMessage(ChatColor.GOLD + "/ww skipnight <arena>" + ChatColor.GRAY + " - Skip the remaining night time");
             sender.sendMessage(ChatColor.GOLD + "/ww reveal <arena>" + ChatColor.GRAY + " - See all players' roles (debug only)");
         }
     }

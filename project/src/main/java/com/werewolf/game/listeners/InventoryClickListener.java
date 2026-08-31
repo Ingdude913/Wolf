@@ -3,7 +3,6 @@ package com.werewolf.game.listeners;
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
-import com.werewolf.game.gui.InfoGUI;
 import com.werewolf.game.gui.NinjaGUI;
 import com.werewolf.game.gui.SeerGUI;
 import org.bukkit.entity.Player;
@@ -36,7 +35,6 @@ public class InventoryClickListener implements Listener {
         if (SeerGUI.isSeerGUI(player, title)) {
             event.setCancelled(true);
 
-            Arena arena = plugin.getArenaManager().getArenaByPlayer(player);
             if (arena == null) return;
 
             GamePlayer seerGp = arena.getGamePlayer(player);
@@ -53,7 +51,6 @@ public class InventoryClickListener implements Listener {
         } else if (NinjaGUI.isNinjaGUI(title)) {
             event.setCancelled(true);
 
-            Arena arena = plugin.getArenaManager().getArenaByPlayer(player);
             if (arena == null) return;
 
             GamePlayer ninjaGp = arena.getGamePlayer(player);
@@ -67,8 +64,6 @@ public class InventoryClickListener implements Listener {
 
             arena.ninjaSelectAbility(player, ability);
             player.closeInventory();
-        } else if (InfoGUI.isInfoGUI(title)) {
-            event.setCancelled(true);
         } else if (arena != null) {
             event.setCancelled(true);
         }
@@ -93,8 +88,6 @@ public class InventoryClickListener implements Listener {
             SeerGUI.clearMapping(player);
         } else if (NinjaGUI.isNinjaGUI(title)) {
             NinjaGUI.clearMapping(player);
-        } else if (InfoGUI.isInfoGUI(title)) {
-            InfoGUI.clearOpenGUI(player);
         }
     }
 }

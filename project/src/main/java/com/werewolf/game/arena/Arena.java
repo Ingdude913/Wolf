@@ -757,28 +757,22 @@ public class Arena {
 
     public void skipDayFromCommand() {
         if (phase != Phase.DAY) return;
-        int skipAmount = Math.max(1, phaseTimer / 3);
-        phaseTimer -= skipAmount;
-        broadcast(ChatColor.AQUA + "Admin skipped " + skipAmount + " seconds! Day ends in " + Math.max(0, phaseTimer) + " seconds.");
+        phaseTimer = 0;
+        broadcast(ChatColor.AQUA + "Admin skipped the remaining day time!");
         updateBossBar();
-        if (phaseTimer <= 0) {
-            cancelTask();
-            taskId = -1;
-            endDayPhase();
-        }
+        cancelTask();
+        taskId = -1;
+        endDayPhase();
     }
 
     public void skipNightFromCommand() {
         if (phase != Phase.NIGHT) return;
-        int skipAmount = Math.max(1, phaseTimer / 3);
-        phaseTimer -= skipAmount;
-        broadcast(ChatColor.DARK_PURPLE + "Admin skipped " + skipAmount + " seconds! Night ends in " + Math.max(0, phaseTimer) + " seconds.");
+        phaseTimer = 0;
+        broadcast(ChatColor.DARK_PURPLE + "Admin skipped the remaining night time!");
         updateBossBar();
-        if (phaseTimer <= 0) {
-            cancelTask();
-            taskId = -1;
-            endNightPhase();
-        }
+        cancelTask();
+        taskId = -1;
+        endNightPhase();
     }
 
     public void forceSetRole(Player player, String roleName) {
@@ -838,6 +832,50 @@ public class Arena {
             sender.sendMessage(ChatColor.GRAY + gp.getPlayer().getName() + " - " +
                     (gp.isAlive() ? ChatColor.GREEN + "ALIVE" : ChatColor.RED + "DEAD") +
                     ChatColor.GRAY + " - " + ChatColor.WHITE + gp.getRole().getName());
+        }
+    }
+
+    public void sendSetupInfo(Player player) {
+        int total = players.size();
+        long werewolves = players.stream().filter(gp -> gp.getRole().isWerewolf()).count();
+        long tricksters = players.stream().filter(gp -> gp.getRole().isTrickster()).count();
+        long witches = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.WitchRole).count();
+        long seers = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.SeerRole).count();
+        long hunters = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.HunterRole).count();
+        long villagers = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.VillagerRole).count();
+        long ninjas = players.stream().filter(gp -> gp.getRole().isNinja()).count();
+
+        int dayDur = plugin.getConfig().getInt("day-duration", 120);
+        int nightDur = plugin.getConfig().getInt("night-duration", 60);
+
+        player.sendMessage(plugin.prefix() + ChatColor.DARK_AQUA + "===== Game Setup =====");
+        player.sendMessage(ChatColor.RED + "Werewolves: " + ChatColor.WHITE + werewolves);
+        player.sendMessage(ChatColor.GOLD + "Tricksters: " + ChatColor.WHITE + tricksters);
+        player.sendMessage(ChatColor.DARK_PURPLE + "Witches: " + ChatColor.WHITE + witches);
+        player.sendMessage(ChatColor.BLUE + "Seers: " + ChatColor.WHITE + seers);
+        player.sendMessage(ChatColor.GOLD + "Hunters: " + ChatColor.WHITE + hunters);
+        player.sendMessage(ChatColor.GREEN + "Villagers: " + ChatColor.WHITE + villagers);
+        player.sendMessage(ChatColor.DARK_PURPLE + "Ninjas: " + ChatColor.WHITE + ninjas);
+        player.sendMessage(ChatColor.WHITE + "Total Players: " + ChatColor.WHITE + total);
+        player.sendMessage(ChatColor.YELLOW + "Day Duration: " + ChatColor.WHITE + dayDur + " seconds");
+        player.sendMessage(ChatColor.BLUE + "Night Duration: " + ChatColor.WHITE + nightDur + " seconds");
+    }
+
+    public void sendWolfTeamInfo(Player player) {
+        player.sendMessage(plugin.prefix() + ChatColor.DARK_RED + "===== Wolf Team =====");
+        boolean any = false;
+        for (GamePlayer gp : players) {
+            if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
+                any = true;
+                String nameColor = gp.getRole().isWerewolf()
+                        ? ChatColor.RED + gp.getPlayer().getName()
+                        : ChatColor.GOLD + gp.getPlayer().getName() + " (Trickster)";
+                String status = gp.isAlive() ? ChatColor.GREEN + "Alive" : ChatColor.RED + "Dead";
+                player.sendMessage(nameColor + ChatColor.GRAY + " - " + gp.getRole().getName() + " - " + status);
+            }
+        }
+        if (!any) {
+            player.sendMessage(ChatColor.GRAY + "No wolf team members.");
         }
     }
 

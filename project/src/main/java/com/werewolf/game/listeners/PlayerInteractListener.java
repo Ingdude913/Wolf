@@ -4,7 +4,6 @@ import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
 import com.werewolf.game.game.Phase;
-import com.werewolf.game.gui.InfoGUI;
 import com.werewolf.game.gui.NinjaGUI;
 import com.werewolf.game.gui.SeerGUI;
 import com.werewolf.game.util.ItemBuilder;
@@ -98,7 +97,7 @@ public class PlayerInteractListener implements Listener {
 
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "setup-info")) {
                 event.setCancelled(true);
-                InfoGUI.openSetup(plugin, arena, player);
+                arena.sendSetupInfo(player);
                 return;
             }
 
@@ -121,7 +120,7 @@ public class PlayerInteractListener implements Listener {
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "wolf-team")) {
                 event.setCancelled(true);
                 if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
-                    InfoGUI.openWolfTeam(arena, player);
+                    arena.sendWolfTeamInfo(player);
                 }
                 return;
             }
