@@ -50,6 +50,7 @@ public class Arena {
 
     private BossBar bossBar = null;
     private int actionBarTaskId = -1;
+    private ScoreboardHelper scoreboardHelper;
 
     public Arena(WerewolfPlugin plugin, String name, String worldName) {
         this.plugin = plugin;
@@ -59,6 +60,24 @@ public class Arena {
         this.dayDuration = plugin.getConfig().getInt("day-duration", 120);
         this.nightDuration = plugin.getConfig().getInt("night-duration", 60);
         this.lobbyDuration = plugin.getConfig().getInt("lobby-duration", 30);
+        this.scoreboardHelper = new ScoreboardHelper(plugin, this);
+        this.scoreboardHelper.setupLobby();
+    }
+
+    public int getMinPlayers() {
+        return minPlayers;
+    }
+
+    public int getPhaseTimer() {
+        return phaseTimer;
+    }
+
+    public int getTaskId() {
+        return taskId;
+    }
+
+    public ScoreboardHelper getScoreboardHelper() {
+        return scoreboardHelper;
     }
 
     public String getName() {
@@ -157,6 +176,8 @@ public class Arena {
             bossBar.addPlayer(player);
         }
 
+        scoreboardHelper.updateLobby();
+
         if (players.size() >= minPlayers && taskId == -1) {
             startLobbyCountdown();
         }
@@ -181,7 +202,12 @@ public class Arena {
             broadcast(ChatColor.RED + "Not enough players. Countdown cancelled.");
         }
 
+        if (phase == Phase.LOBBY) {
+            scoreboardHelper.updateLobby();
+        }
+
         if (phase == Phase.DAY || phase == Phase.NIGHT) {
+            scoreboardHelper.updateGame();
             checkWinCondition();
         }
     }
@@ -197,20 +223,46 @@ public class Arena {
                     cancelTask();
                     taskId = -1;
                     broadcast(ChatColor.RED + "Not enough players. Countdown cancelled.");
+                    scoreboardHelper.updateLobby();
                     return;
                 }
                 if (phaseTimer <= 0) {
                     cancelTask();
                     taskId = -1;
-                    startGame();
+                    startCountdownTitle();
                     return;
                 }
                 if (phaseTimer <= 10 || phaseTimer % 30 == 0) {
                     broadcast(ChatColor.GOLD + "Game starting in " + phaseTimer + " seconds!");
                 }
+                scoreboardHelper.updateLobby();
                 phaseTimer--;
             }
         }.runTaskTimer(plugin, 20L, 20L).getTaskId();
+    }
+
+    private void startCountdownTitle() {
+        final int[] count = {3};
+        broadcast(ChatColor.GOLD + "Game starting!");
+        for (GamePlayer gp : players) {
+            Player p = gp.getPlayer();
+            p.sendTitle(ChatColor.GOLD + "" + count[0], "", 0, 20, 0);
+        }
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                count[0]--;
+                if (count[0] > 0) {
+                    for (GamePlayer gp : players) {
+                        Player p = gp.getPlayer();
+                        p.sendTitle(ChatColor.GOLD + "" + count[0], "", 0, 20, 0);
+                    }
+                } else {
+                    cancel();
+                    startGame();
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 20L);
     }
 
     public void startGame() {
@@ -220,6 +272,7 @@ public class Arena {
         broadcast(ChatColor.GREEN + "The game has begun! It is DAY time. Discuss and get to know each other!");
         teleportPlayersToSpawn();
         giveDayItems();
+        scoreboardHelper.setupGame();
         for (GamePlayer gp : players) {
             Player p = gp.getPlayer();
             p.setGameMode(GameMode.ADVENTURE);
@@ -341,6 +394,7 @@ public class Arena {
                     broadcast(ChatColor.GOLD + "Day ends in " + phaseTimer + " seconds!");
                 }
                 updateBossBar();
+                scoreboardHelper.updateGame();
                 phaseTimer--;
             }
         }.runTaskTimer(plugin, 20L, 20L).getTaskId();
@@ -373,6 +427,7 @@ public class Arena {
         for (GamePlayer gp : players) {
             gp.resetVote();
         }
+        scoreboardHelper.updateVotes(voteCounts);
         if (tie || mostVoted == null) {
             broadcast(ChatColor.YELLOW + "The vote was tied. No one is eliminated.");
             return;
@@ -401,6 +456,7 @@ public class Arena {
         voteCounts.merge(target.getUniqueId(), 1, Integer::sum);
         voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + "!");
         broadcast(ChatColor.YELLOW + voter.getName() + " has voted. (" + voteCounts.getOrDefault(target.getUniqueId(), 0) + " votes for " + target.getName() + ")");
+        scoreboardHelper.updateVotes(voteCounts);
     }
 
     public void revokeVote(Player voter) {
@@ -419,6 +475,7 @@ public class Arena {
         }
         voterGp.resetVote();
         voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "Your vote has been revoked.");
+        scoreboardHelper.updateVotes(voteCounts);
     }
 
     private void startNightPhase() {
@@ -455,6 +512,7 @@ public class Arena {
                     broadcast(ChatColor.DARK_PURPLE + "Night ends in " + phaseTimer + " seconds!");
                 }
                 updateBossBar();
+                scoreboardHelper.updateGame();
                 phaseTimer--;
             }
         }.runTaskTimer(plugin, 20L, 20L).getTaskId();
@@ -694,6 +752,7 @@ public class Arena {
         hunterTargets.clear();
         pendingNightDeaths.clear();
         phase = Phase.LOBBY;
+        scoreboardHelper.setupLobby();
     }
 
     private void revealAllRoles() {
@@ -720,6 +779,7 @@ public class Arena {
         hunterTargets.clear();
         pendingNightDeaths.clear();
         phase = Phase.LOBBY;
+        scoreboardHelper.setupLobby();
         broadcast(ChatColor.RED + "The game has been force stopped.");
     }
 
