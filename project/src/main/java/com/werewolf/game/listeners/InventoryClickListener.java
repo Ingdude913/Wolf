@@ -11,6 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 
 public class InventoryClickListener implements Listener {
@@ -25,6 +26,8 @@ public class InventoryClickListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
+
+        Arena arena = plugin.getArenaManager().getArenaByPlayer(player);
 
         Inventory inv = event.getView().getTopInventory();
         if (inv == null) return;
@@ -65,6 +68,18 @@ public class InventoryClickListener implements Listener {
             arena.ninjaSelectAbility(player, ability);
             player.closeInventory();
         } else if (InfoGUI.isInfoGUI(title)) {
+            event.setCancelled(true);
+        } else if (arena != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) event.getWhoClicked();
+        Arena arena = plugin.getArenaManager().getArenaByPlayer(player);
+        if (arena != null) {
             event.setCancelled(true);
         }
     }
