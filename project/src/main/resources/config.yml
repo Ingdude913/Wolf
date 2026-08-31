@@ -9,6 +9,10 @@ day-duration: 120
 # Night phase duration in seconds
 night-duration: 60
 
+# Ability cooldowns in seconds (for reusable abilities)
+transform-cooldown: 10
+ninja-cooldown: 15
+
 # Lobby (waiting) duration in seconds after minimum players reached
 lobby-duration: 30
 

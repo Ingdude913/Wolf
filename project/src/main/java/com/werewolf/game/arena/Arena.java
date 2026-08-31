@@ -44,6 +44,10 @@ public class Arena {
 
     private final Map<UUID, Integer> voteCounts = new HashMap<>();
     private final Map<UUID, UUID> hunterTargets = new HashMap<>();
+    private final Map<String, Long> abilityCooldowns = new HashMap<>();
+
+    private int transformCooldown;
+    private int ninjaCooldown;
 
     private boolean debugMode = false;
     private boolean firstDay = true;
@@ -60,6 +64,8 @@ public class Arena {
         this.dayDuration = plugin.getConfig().getInt("day-duration", 120);
         this.nightDuration = plugin.getConfig().getInt("night-duration", 60);
         this.lobbyDuration = plugin.getConfig().getInt("lobby-duration", 30);
+        this.transformCooldown = plugin.getConfig().getInt("transform-cooldown", 10);
+        this.ninjaCooldown = plugin.getConfig().getInt("ninja-cooldown", 15);
         this.scoreboardHelper = new ScoreboardHelper(plugin, this);
         this.scoreboardHelper.setupLobby();
     }
@@ -680,6 +686,9 @@ public class Arena {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null || !gp.isAlive()) return;
         if (!gp.getRole().isWerewolf() && !gp.getRole().isTrickster()) return;
+        String cooldownKey = player.getUniqueId() + ":transform";
+        if (isOnCooldown(cooldownKey, transformCooldown, player)) return;
+        setCooldown(cooldownKey);
         PlayerInventory inv = player.getInventory();
 
         if (gp.isTransformed()) {
@@ -761,6 +770,7 @@ public class Arena {
         voteCounts.clear();
         hunterTargets.clear();
         pendingNightDeaths.clear();
+        abilityCooldowns.clear();
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
     }
@@ -791,6 +801,7 @@ public class Arena {
         voteCounts.clear();
         hunterTargets.clear();
         pendingNightDeaths.clear();
+        abilityCooldowns.clear();
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
         broadcast(ChatColor.RED + "The game has been force stopped.");
@@ -1031,6 +1042,8 @@ public class Arena {
         if (gp == null || !gp.isAlive()) return;
         NinjaRole ninjaRole = gp.asNinja();
         if (ninjaRole == null) return;
+        String cooldownKey = player.getUniqueId() + ":ninja";
+        if (isOnCooldown(cooldownKey, ninjaCooldown, player)) return;
         if (ninjaRole.hasUsedAbilityTonight()) {
             player.sendMessage(plugin.prefix() + ChatColor.RED + "You have already used your ability tonight!");
             return;
@@ -1040,6 +1053,7 @@ public class Arena {
             player.sendMessage(plugin.prefix() + ChatColor.RED + "Use your Ninja Book to select an ability first!");
             return;
         }
+        setCooldown(cooldownKey);
         ninjaRole.setAbilityUsedTonight(true);
         player.getInventory().removeItem(ItemBuilder.create(plugin, "ninja-book"));
         player.getInventory().removeItem(ItemBuilder.create(plugin, "ninja-ability"));
@@ -1104,6 +1118,22 @@ public class Arena {
             default:
                 break;
         }
+    }
+
+    private boolean isOnCooldown(String key, int cooldownSeconds, Player player) {
+        Long lastUsed = abilityCooldowns.get(key);
+        if (lastUsed == null) return false;
+        long elapsed = (System.currentTimeMillis() - lastUsed) / 1000L;
+        long remaining = cooldownSeconds - elapsed;
+        if (remaining > 0) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "Ability on cooldown! " + remaining + "s remaining.");
+            return true;
+        }
+        return false;
+    }
+
+    private void setCooldown(String key) {
+        abilityCooldowns.put(key, System.currentTimeMillis());
     }
 
     public void broadcast(String message) {
