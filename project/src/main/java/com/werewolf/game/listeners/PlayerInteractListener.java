@@ -6,6 +6,7 @@ import com.werewolf.game.game.GamePlayer;
 import com.werewolf.game.game.Phase;
 import com.werewolf.game.gui.NinjaGUI;
 import com.werewolf.game.gui.SeerGUI;
+import com.werewolf.game.gui.SheriffGUI;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -32,6 +33,14 @@ public class PlayerInteractListener implements Listener {
         if (gp == null || !gp.isAlive()) return;
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "vote-sheriff")) {
+                event.setCancelled(true);
+                if (arena.getPhase() == Phase.SHERIFF_ELECTION) {
+                    SheriffGUI.open(plugin, arena, player);
+                }
+                return;
+            }
+
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "revoke-vote")) {
                 event.setCancelled(true);
                 if (arena.getPhase() == Phase.DAY) {

@@ -2,6 +2,7 @@ package com.werewolf.game.arena;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.*;
+import com.werewolf.game.gui.SheriffGUI;
 import com.werewolf.game.roles.*;
 import com.werewolf.game.util.ColorUtil;
 import com.werewolf.game.util.ItemBuilder;
@@ -48,9 +49,13 @@ public class Arena {
 
     private int transformCooldown;
     private int ninjaCooldown;
+    private int electionDuration;
 
     private boolean debugMode = false;
     private boolean firstDay = true;
+
+    private final Map<UUID, Integer> sheriffElectionVotes = new HashMap<>();
+    private UUID sheriffId = null;
 
     private BossBar bossBar = null;
     private int actionBarTaskId = -1;
@@ -66,6 +71,7 @@ public class Arena {
         this.lobbyDuration = plugin.getConfig().getInt("lobby-duration", 30);
         this.transformCooldown = plugin.getConfig().getInt("transform-cooldown", 10);
         this.ninjaCooldown = plugin.getConfig().getInt("ninja-cooldown", 15);
+        this.electionDuration = plugin.getConfig().getInt("election-duration", 30);
         this.scoreboardHelper = new ScoreboardHelper(plugin, this);
         this.scoreboardHelper.setupLobby();
     }
@@ -219,9 +225,11 @@ public class Arena {
             scoreboardHelper.updateLobby();
         }
 
-        if (phase == Phase.DAY || phase == Phase.NIGHT) {
+        if (phase == Phase.DAY || phase == Phase.NIGHT || phase == Phase.SHERIFF_ELECTION) {
             scoreboardHelper.updateGame();
-            checkWinCondition();
+            if (phase != Phase.SHERIFF_ELECTION) {
+                checkWinCondition();
+            }
         }
     }
 
@@ -280,12 +288,7 @@ public class Arena {
 
     public void startGame() {
         assignRoles();
-        phase = Phase.DAY;
-        firstDay = true;
-        broadcast(ChatColor.GREEN + "The game has begun! It is DAY time. Discuss and get to know each other!");
         teleportPlayersToSpawn();
-        giveDayItems();
-        scoreboardHelper.setupGame();
         for (GamePlayer gp : players) {
             Player p = gp.getPlayer();
             p.setGameMode(GameMode.ADVENTURE);
@@ -293,9 +296,125 @@ public class Arena {
             p.setFoodLevel(20);
             p.sendMessage(plugin.prefix() + ChatColor.GOLD + "Your role: " + ChatColor.WHITE + gp.getRole().getName());
             p.sendMessage(plugin.prefix() + ChatColor.GRAY + gp.getRole().getDescription());
-            gp.getRole().onDayStart(p);
+        }
+        startSheriffElection();
+    }
+
+    private void startSheriffElection() {
+        phase = Phase.SHERIFF_ELECTION;
+        phaseTimer = electionDuration;
+        setWorldTime(6000);
+        broadcast(ChatColor.GOLD + "===== SHERIFF ELECTION =====");
+        broadcast(ChatColor.YELLOW + "Vote for who should become the Sheriff! The Sheriff gets 2 votes during daytime voting.");
+        broadcast(ChatColor.YELLOW + "Right-click the Vote Sheriff item to open the voting menu.");
+
+        for (GamePlayer gp : getAlivePlayers()) {
+            Player p = gp.getPlayer();
+            p.getInventory().clear();
+            p.getInventory().setItem(getItemSlot("vote-sheriff"), ItemBuilder.create(plugin, "vote-sheriff"));
+            giveInfoItems(gp);
+        }
+
+        createBossBar(ChatColor.GOLD + "Sheriff Election", BarColor.YELLOW);
+        scoreboardHelper.setupGame();
+
+        taskId = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (phaseTimer <= 0) {
+                    cancelTask();
+                    taskId = -1;
+                    endSheriffElection();
+                    return;
+                }
+                if (phaseTimer == 30 || phaseTimer == 10 || phaseTimer <= 5) {
+                    broadcast(ChatColor.GOLD + "Sheriff election ends in " + phaseTimer + " seconds!");
+                }
+                updateBossBar();
+                scoreboardHelper.updateGame();
+                phaseTimer--;
+            }
+        }.runTaskTimer(plugin, 20L, 20L).getTaskId();
+    }
+
+    private void endSheriffElection() {
+        UUID electedId = null;
+        int maxVotes = 0;
+        boolean tie = false;
+        for (Map.Entry<UUID, Integer> entry : sheriffElectionVotes.entrySet()) {
+            if (entry.getValue() > maxVotes) {
+                maxVotes = entry.getValue();
+                electedId = entry.getKey();
+                tie = false;
+            } else if (entry.getValue() == maxVotes) {
+                tie = true;
+            }
+        }
+        sheriffElectionVotes.clear();
+
+        if (tie || electedId == null || maxVotes == 0) {
+            broadcast(ChatColor.YELLOW + "The sheriff election was tied or no votes were cast. No sheriff elected.");
+        } else {
+            Player sheriff = Bukkit.getPlayer(electedId);
+            if (sheriff != null) {
+                GamePlayer sheriffGp = getGamePlayer(sheriff);
+                if (sheriffGp != null) {
+                    sheriffGp.setSheriff(true);
+                    sheriffId = electedId;
+                    broadcast(ChatColor.GOLD + "===== SHERIFF ELECTED =====");
+                    broadcast(ChatColor.YELLOW + sheriff.getName() + " is now the Sheriff! They have 2 votes during daytime voting.");
+                    sheriff.sendMessage(plugin.prefix() + ChatColor.GOLD + "You are the Sheriff! Your votes count as 2 during daytime voting.");
+                }
+            }
+        }
+
+        firstDay = true;
+        broadcast(ChatColor.GREEN + "The game has begun! It is DAY time. Discuss and get to know each other!");
+        giveDayItems();
+        scoreboardHelper.updateGame();
+        for (GamePlayer gp : getAlivePlayers()) {
+            gp.getRole().onDayStart(gp.getPlayer());
         }
         startDayPhase();
+    }
+
+    public void castSheriffVote(Player voter, Player target) {
+        GamePlayer voterGp = getGamePlayer(voter);
+        GamePlayer targetGp = getGamePlayer(target);
+        if (voterGp == null || targetGp == null) return;
+        if (phase != Phase.SHERIFF_ELECTION) return;
+        if (!voterGp.isAlive() || !targetGp.isAlive()) {
+            voter.sendMessage(plugin.prefix() + ChatColor.RED + "Dead players cannot vote or be voted.");
+            return;
+        }
+        if (voterGp.hasVoted()) {
+            voter.sendMessage(plugin.prefix() + ChatColor.RED + "You have already voted! Right-click the Vote Sheriff item to change your vote.");
+            return;
+        }
+        voterGp.setVoted(true);
+        voterGp.setVotedFor(target);
+        sheriffElectionVotes.merge(target.getUniqueId(), 1, Integer::sum);
+        voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + " for Sheriff!");
+        broadcast(ChatColor.YELLOW + voter.getName() + " has voted in the sheriff election.");
+    }
+
+    public void revokeSheriffVote(Player voter) {
+        GamePlayer voterGp = getGamePlayer(voter);
+        if (voterGp == null || !voterGp.isAlive()) return;
+        if (phase != Phase.SHERIFF_ELECTION) return;
+        if (!voterGp.hasVoted()) {
+            voter.sendMessage(plugin.prefix() + ChatColor.RED + "You haven't voted yet!");
+            return;
+        }
+        Player target = voterGp.getVotedFor();
+        if (target != null) {
+            sheriffElectionVotes.merge(target.getUniqueId(), -1, Integer::sum);
+            if (sheriffElectionVotes.getOrDefault(target.getUniqueId(), 0) <= 0) {
+                sheriffElectionVotes.remove(target.getUniqueId());
+            }
+        }
+        voterGp.resetVote();
+        voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "Your sheriff election vote has been revoked.");
     }
 
     private void assignRoles() {
@@ -360,21 +479,25 @@ public class Arena {
             Player p = gp.getPlayer();
             p.getInventory().clear();
             if (!firstDay) {
-                p.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
-                p.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+                p.getInventory().setItem(getItemSlot("vote-sword"), ItemBuilder.create(plugin, "vote-sword"));
+                p.getInventory().setItem(getItemSlot("revoke-vote"), ItemBuilder.create(plugin, "revoke-vote"));
             }
-            p.getInventory().setItem(2, ItemBuilder.create(plugin, "skip-day"));
+            p.getInventory().setItem(getItemSlot("skip-day"), ItemBuilder.create(plugin, "skip-day"));
             giveInfoItems(gp);
         }
     }
 
     private void giveInfoItems(GamePlayer gp) {
         Player p = gp.getPlayer();
-        p.getInventory().setItem(7, ItemBuilder.create(plugin, "setup-info"));
-        p.getInventory().setItem(8, ItemBuilder.create(plugin, "role-info-book"));
+        p.getInventory().setItem(getItemSlot("setup-info"), ItemBuilder.create(plugin, "setup-info"));
+        p.getInventory().setItem(getItemSlot("role-info-book"), ItemBuilder.create(plugin, "role-info-book"));
         if (gp.getRole().isWerewolf()) {
-            p.getInventory().setItem(6, ItemBuilder.create(plugin, "wolf-team"));
+            p.getInventory().setItem(getItemSlot("wolf-team"), ItemBuilder.create(plugin, "wolf-team"));
         }
+    }
+
+    private int getItemSlot(String itemKey) {
+        return plugin.getConfig().getInt("items." + itemKey + ".slot", 0);
     }
 
     private void startDayPhase() {
@@ -466,8 +589,9 @@ public class Arena {
         }
         voterGp.setVoted(true);
         voterGp.setVotedFor(target);
-        voteCounts.merge(target.getUniqueId(), 1, Integer::sum);
-        voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + "!");
+        int voteWeight = voterGp.isSheriff() ? 2 : 1;
+        voteCounts.merge(target.getUniqueId(), voteWeight, Integer::sum);
+        voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + "!" + (voterGp.isSheriff() ? ChatColor.GOLD + " (Sheriff: 2 votes)" : ""));
         broadcast(ChatColor.YELLOW + voter.getName() + " has voted. (" + voteCounts.getOrDefault(target.getUniqueId(), 0) + " votes for " + target.getName() + ")");
         scoreboardHelper.updateVotes(voteCounts);
     }
@@ -481,7 +605,8 @@ public class Arena {
         }
         Player target = voterGp.getVotedFor();
         if (target != null) {
-            voteCounts.merge(target.getUniqueId(), -1, Integer::sum);
+            int voteWeight = voterGp.isSheriff() ? 2 : 1;
+            voteCounts.merge(target.getUniqueId(), -voteWeight, Integer::sum);
             if (voteCounts.getOrDefault(target.getUniqueId(), 0) <= 0) {
                 voteCounts.remove(target.getUniqueId());
             }
@@ -768,9 +893,11 @@ public class Arena {
         revealAllRoles();
         players.clear();
         voteCounts.clear();
+        sheriffElectionVotes.clear();
         hunterTargets.clear();
         pendingNightDeaths.clear();
         abilityCooldowns.clear();
+        sheriffId = null;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
     }
@@ -799,9 +926,11 @@ public class Arena {
         }
         players.clear();
         voteCounts.clear();
+        sheriffElectionVotes.clear();
         hunterTargets.clear();
         pendingNightDeaths.clear();
         abilityCooldowns.clear();
+        sheriffId = null;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
         broadcast(ChatColor.RED + "The game has been force stopped.");
@@ -859,6 +988,16 @@ public class Arena {
         endNightPhase();
     }
 
+    public void skipElectionFromCommand() {
+        if (phase != Phase.SHERIFF_ELECTION) return;
+        phaseTimer = 0;
+        broadcast(ChatColor.GOLD + "Admin skipped the remaining election time!");
+        updateBossBar();
+        cancelTask();
+        taskId = -1;
+        endSheriffElection();
+    }
+
     public void forceSetRole(Player player, String roleName) {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null) {
@@ -894,13 +1033,17 @@ public class Arena {
         player.sendMessage(plugin.prefix() + ChatColor.GOLD + "Your role has been set to: " + ChatColor.WHITE + role.getName());
         player.sendMessage(plugin.prefix() + ChatColor.GRAY + role.getDescription());
 
-        if (phase == Phase.DAY) {
+        if (phase == Phase.SHERIFF_ELECTION) {
+            player.getInventory().clear();
+            player.getInventory().setItem(getItemSlot("vote-sheriff"), ItemBuilder.create(plugin, "vote-sheriff"));
+            giveInfoItems(gp);
+        } else if (phase == Phase.DAY) {
             player.getInventory().clear();
             if (!firstDay) {
-                player.getInventory().setItem(0, ItemBuilder.create(plugin, "vote-sword"));
-                player.getInventory().setItem(1, ItemBuilder.create(plugin, "revoke-vote"));
+                player.getInventory().setItem(getItemSlot("vote-sword"), ItemBuilder.create(plugin, "vote-sword"));
+                player.getInventory().setItem(getItemSlot("revoke-vote"), ItemBuilder.create(plugin, "revoke-vote"));
             }
-            player.getInventory().setItem(2, ItemBuilder.create(plugin, "skip-day"));
+            player.getInventory().setItem(getItemSlot("skip-day"), ItemBuilder.create(plugin, "skip-day"));
             giveInfoItems(gp);
             role.onDayStart(player);
         } else if (phase == Phase.NIGHT) {
@@ -971,11 +1114,23 @@ public class Arena {
 
     private void updateBossBar() {
         if (bossBar == null) return;
-        int totalDuration = (phase == Phase.DAY) ? dayDuration : nightDuration;
+        int totalDuration;
+        String phaseName;
+        if (phase == Phase.SHERIFF_ELECTION) {
+            totalDuration = electionDuration;
+            phaseName = ChatColor.GOLD + "Election";
+        } else if (phase == Phase.DAY) {
+            totalDuration = dayDuration;
+            phaseName = ChatColor.GOLD + "Day";
+        } else if (phase == Phase.NIGHT) {
+            totalDuration = nightDuration;
+            phaseName = ChatColor.DARK_PURPLE + "Night";
+        } else {
+            return;
+        }
         if (totalDuration <= 0) return;
         double progress = Math.max(0.0, Math.min(1.0, (double) phaseTimer / (double) totalDuration));
         bossBar.setProgress(progress);
-        String phaseName = (phase == Phase.DAY) ? ChatColor.GOLD + "Day" : ChatColor.DARK_PURPLE + "Night";
         bossBar.setTitle(phaseName + ChatColor.GRAY + " - " + Math.max(0, phaseTimer) + "s");
     }
 
@@ -991,7 +1146,7 @@ public class Arena {
         actionBarTaskId = new BukkitRunnable() {
             @Override
             public void run() {
-                if (phase != Phase.DAY && phase != Phase.NIGHT) {
+                if (phase != Phase.DAY && phase != Phase.NIGHT && phase != Phase.SHERIFF_ELECTION) {
                     cancel();
                     actionBarTaskId = -1;
                     return;
@@ -1000,10 +1155,12 @@ public class Arena {
                     Player p = gp.getPlayer();
                     if (!p.isOnline()) continue;
                     String text;
-                    if (gp.isAlive()) {
+                    if (phase == Phase.SHERIFF_ELECTION) {
+                        text = ChatColor.GOLD + "Sheriff Election" + ChatColor.GRAY + " | " + Math.max(0, phaseTimer) + "s";
+                    } else if (gp.isAlive()) {
                         text = ChatColor.GOLD + "Role: " + ChatColor.WHITE + gp.getRole().getName() +
                                 ChatColor.GRAY + " | " + ChatColor.AQUA + (phase == Phase.DAY ? "Day" : "Night") +
-                                ChatColor.GRAY + " | " + (gp.isAlive() ? ChatColor.GREEN + "Alive" : ChatColor.RED + "Dead");
+                                ChatColor.GRAY + " | " + (gp.isSheriff() ? ChatColor.GOLD + "Sheriff (2x votes)" : ChatColor.GREEN + "Alive");
                     } else {
                         text = ChatColor.RED + "You are dead - Spectating" +
                                 ChatColor.GRAY + " | " + ChatColor.AQUA + (phase == Phase.DAY ? "Day" : "Night");
@@ -1032,7 +1189,7 @@ public class Arena {
             return;
         }
         ninjaRole.setSelectedAbility(ability);
-        player.getInventory().setItem(3, ItemBuilder.create(plugin, "ninja-ability"));
+        player.getInventory().setItem(getItemSlot("ninja-ability"), ItemBuilder.create(plugin, "ninja-ability"));
         String abilityName = ability.substring(0, 1).toUpperCase() + ability.substring(1);
         player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You selected: " + ChatColor.WHITE + abilityName + ChatColor.DARK_PURPLE + "! Right-click your Ninja Orb to activate it.");
     }

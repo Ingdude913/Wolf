@@ -122,7 +122,10 @@ public class ScoreboardHelper {
 
         String phaseName;
         ChatColor phaseColor;
-        if (phase == Phase.DAY) {
+        if (phase == Phase.SHERIFF_ELECTION) {
+            phaseName = "Election";
+            phaseColor = ChatColor.GOLD;
+        } else if (phase == Phase.DAY) {
             phaseName = "Day";
             phaseColor = ChatColor.GOLD;
         } else if (phase == Phase.NIGHT) {

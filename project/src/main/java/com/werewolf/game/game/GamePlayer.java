@@ -11,6 +11,7 @@ public class GamePlayer {
     private boolean voted = false;
     private Player votedFor = null;
     private boolean transformed = false;
+    private boolean isSheriff = false;
 
     public GamePlayer(Player player) {
         this.player = player;
@@ -93,5 +94,13 @@ public class GamePlayer {
     public NinjaRole asNinja() {
         if (role instanceof NinjaRole) return (NinjaRole) role;
         return null;
+    }
+
+    public boolean isSheriff() {
+        return isSheriff;
+    }
+
+    public void setSheriff(boolean sheriff) {
+        this.isSheriff = sheriff;
     }
 }

@@ -13,6 +13,9 @@ night-duration: 60
 transform-cooldown: 10
 ninja-cooldown: 15
 
+# Sheriff election duration in seconds (after roles assigned, before first night)
+election-duration: 30
+
 # Lobby (waiting) duration in seconds after minimum players reached
 lobby-duration: 30
 
@@ -37,42 +40,60 @@ items:
   vote-sword:
     material: STONE_SWORD
     name: "&c&lVote Sword &7(Left-click a player to vote)"
+    slot: 0
   revoke-vote:
     material: PAPER
     name: "&e&lRevoke Vote &7(Right-click to revoke your vote)"
+    slot: 1
   seer-book:
     material: BOOK
     name: "&9&lSeer's Book &7(Right-click to check a player)"
+    slot: 0
   witch-poison:
     material: POTION
     name: "&5&lPoison &7(Right-click a player to kill them)"
+    slot: 1
   witch-heal:
     material: POTION
     name: "&a&lHeal &7(Right-click a player to heal them)"
+    slot: 2
   hunter-target:
     material: COMPASS
     name: "&6&lHunter's Compass &7(Right-click a player to select your target)"
+    slot: 0
   werewolf-axe:
     material: NETHERITE_AXE
     name: "&4&lWerewolf Axe &7(Left-click to kill)"
+    slot: 0
   werewolf-armor:
     material: NETHERITE_CHESTPLATE
     name: "&4&lWerewolf Armor &7(Right-click to transform)"
+    slot: 0
   skip-day:
     material: CLOCK
     name: "&b&lSkip Time &7(Right-click to skip 1/3 of remaining time)"
+    slot: 2
   role-info-book:
     material: WRITTEN_BOOK
     name: "&6&lYour Role &7(Right-click to read)"
+    slot: 8
   setup-info:
     material: PAPER
     name: "&e&lGame Setup &7(Right-click to view setup)"
+    slot: 7
   wolf-team:
     material: RED_WOOL
     name: "&4&lWolf Team &7(Right-click to see teammates)"
+    slot: 6
   ninja-book:
     material: ENCHANTED_BOOK
     name: "&5&lNinja Book &7(Right-click to select an ability)"
+    slot: 0
   ninja-ability:
     material: ENDER_EYE
     name: "&5&lNinja Orb &7(Right-click to activate your selected ability)"
+    slot: 3
+  vote-sheriff:
+    material: PAPER
+    name: "&6&lVote Sheriff &7(Right-click to vote for the Sheriff)"
+    slot: 0

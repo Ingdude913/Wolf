@@ -5,6 +5,7 @@ import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
 import com.werewolf.game.gui.NinjaGUI;
 import com.werewolf.game.gui.SeerGUI;
+import com.werewolf.game.gui.SheriffGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -64,6 +65,22 @@ public class InventoryClickListener implements Listener {
 
             arena.ninjaSelectAbility(player, ability);
             player.closeInventory();
+        } else if (SheriffGUI.isSheriffGUI(title)) {
+            event.setCancelled(true);
+
+            if (arena == null) return;
+
+            GamePlayer voterGp = arena.getGamePlayer(player);
+            if (voterGp == null || !voterGp.isAlive()) return;
+
+            int slot = event.getRawSlot();
+            if (slot < 0 || slot >= inv.getSize()) return;
+
+            Player target = SheriffGUI.getPlayerAtSlot(player, slot);
+            if (target == null) return;
+
+            arena.castSheriffVote(player, target);
+            player.closeInventory();
         } else if (arena != null) {
             event.setCancelled(true);
         }
@@ -88,6 +105,8 @@ public class InventoryClickListener implements Listener {
             SeerGUI.clearMapping(player);
         } else if (NinjaGUI.isNinjaGUI(title)) {
             NinjaGUI.clearMapping(player);
+        } else if (SheriffGUI.isSheriffGUI(title)) {
+            SheriffGUI.clearMapping(player);
         }
     }
 }

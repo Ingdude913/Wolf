@@ -30,7 +30,7 @@ public class PlayerDamageListener implements Listener {
         GamePlayer gp = arena.getGamePlayer(player);
         if (gp == null) return;
 
-        if (arena.getPhase() == Phase.LOBBY || arena.getPhase() == Phase.ENDED) {
+        if (arena.getPhase() == Phase.LOBBY || arena.getPhase() == Phase.ENDED || arena.getPhase() == Phase.SHERIFF_ELECTION) {
             event.setCancelled(true);
             return;
         }
@@ -67,7 +67,7 @@ public class PlayerDamageListener implements Listener {
             return;
         }
 
-        if (arena.getPhase() == Phase.LOBBY || arena.getPhase() == Phase.ENDED) {
+        if (arena.getPhase() == Phase.LOBBY || arena.getPhase() == Phase.ENDED || arena.getPhase() == Phase.SHERIFF_ELECTION) {
             event.setCancelled(true);
             return;
         }

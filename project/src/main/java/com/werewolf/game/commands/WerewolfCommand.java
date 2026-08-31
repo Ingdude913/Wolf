@@ -171,6 +171,17 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
                 }
                 handleSkipNight(sender, args[1]);
                 break;
+            case "skipelection":
+                if (!sender.hasPermission("werewolf.admin")) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.prefix() + ChatColor.RED + "Usage: /ww skipelection <arena>");
+                    return true;
+                }
+                handleSkipElection(sender, args[1]);
+                break;
             case "reveal":
                 if (!sender.hasPermission("werewolf.admin")) {
                     sender.sendMessage(plugin.prefix() + ChatColor.RED + "You don't have permission.");
@@ -386,6 +397,20 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped the remaining night time.");
     }
 
+    private void handleSkipElection(CommandSender sender, String arenaName) {
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+        if (arena == null) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "Arena " + arenaName + " does not exist!");
+            return;
+        }
+        if (arena.getPhase() != com.werewolf.game.game.Phase.SHERIFF_ELECTION) {
+            sender.sendMessage(plugin.prefix() + ChatColor.RED + "It is not the sheriff election phase!");
+            return;
+        }
+        arena.skipElectionFromCommand();
+        sender.sendMessage(plugin.prefix() + ChatColor.GREEN + "Skipped the remaining election time.");
+    }
+
     private void handleReveal(CommandSender sender, String arenaName) {
         Arena arena = plugin.getArenaManager().getArena(arenaName);
         if (arena == null) {
@@ -425,6 +450,7 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GOLD + "/ww setrole <player> <role>" + ChatColor.GRAY + " - Force-set a player's role (debug only)");
             sender.sendMessage(ChatColor.GOLD + "/ww skipday <arena>" + ChatColor.GRAY + " - Skip the remaining day time (debug only)");
             sender.sendMessage(ChatColor.GOLD + "/ww skipnight <arena>" + ChatColor.GRAY + " - Skip the remaining night time");
+            sender.sendMessage(ChatColor.GOLD + "/ww skipelection <arena>" + ChatColor.GRAY + " - Skip the remaining sheriff election time");
             sender.sendMessage(ChatColor.GOLD + "/ww reveal <arena>" + ChatColor.GRAY + " - See all players' roles (debug only)");
         }
     }
@@ -448,13 +474,14 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
                 completions.add("setrole");
                 completions.add("skipday");
                 completions.add("skipnight");
+                completions.add("skipelection");
                 completions.add("reveal");
             }
         } else if (args.length == 2) {
             String sub = args[0].toLowerCase();
             if (sub.equals("join") || sub.equals("delete") ||
                     sub.equals("setspawn") || sub.equals("forcestart") || sub.equals("forcestop") ||
-                    sub.equals("skipday") || sub.equals("skipnight") || sub.equals("reveal") || sub.equals("debug")) {
+                    sub.equals("skipday") || sub.equals("skipnight") || sub.equals("skipelection") || sub.equals("reveal") || sub.equals("debug")) {
                 for (Arena arena : plugin.getArenaManager().getArenas()) {
                     completions.add(arena.getName());
                 }
