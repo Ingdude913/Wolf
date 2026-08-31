@@ -119,7 +119,7 @@ public class PlayerInteractListener implements Listener {
 
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "wolf-team")) {
                 event.setCancelled(true);
-                if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
+                if (gp.getRole().isWerewolf()) {
                     arena.sendWolfTeamInfo(player);
                 }
                 return;

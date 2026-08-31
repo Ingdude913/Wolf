@@ -48,9 +48,4 @@ public class TricksterRole extends Role {
     public boolean isTrickster() {
         return true;
     }
-
-    @Override
-    public boolean canSeeWerewolves() {
-        return true;
-    }
 }

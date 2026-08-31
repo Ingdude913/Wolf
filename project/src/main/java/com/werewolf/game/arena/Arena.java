@@ -366,7 +366,7 @@ public class Arena {
         Player p = gp.getPlayer();
         p.getInventory().setItem(7, ItemBuilder.create(plugin, "setup-info"));
         p.getInventory().setItem(8, ItemBuilder.create(plugin, "role-info-book"));
-        if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
+        if (gp.getRole().isWerewolf()) {
             p.getInventory().setItem(6, ItemBuilder.create(plugin, "wolf-team"));
         }
     }
@@ -580,7 +580,6 @@ public class Arena {
         p.setGameMode(GameMode.SPECTATOR);
         p.getInventory().clear();
         broadcast(ChatColor.RED + p.getName() + " has been " + reason + "!");
-        broadcast(ChatColor.GRAY + "They were the " + gp.getRole().getName() + ".");
 
         if (gp.getRole() instanceof HunterRole) {
             HunterRole hunter = (HunterRole) gp.getRole();
@@ -602,8 +601,9 @@ public class Arena {
             killer.sendMessage(plugin.prefix() + ChatColor.RED + "You cannot kill a fellow werewolf!");
             return;
         }
-        addNightDeath(targetGp);
-        killer.sendMessage(plugin.prefix() + ChatColor.RED + "You have attacked " + target.getName() + "!");
+        eliminatePlayer(targetGp, "killed by a werewolf");
+        killer.sendMessage(plugin.prefix() + ChatColor.RED + "You have killed " + target.getName() + "!");
+        checkWinCondition();
     }
 
     public void witchPoison(Player witch, Player target) {
@@ -940,11 +940,8 @@ public class Arena {
         for (GamePlayer gp : players) {
             if (gp.getRole().isWerewolf() || gp.getRole().isTrickster()) {
                 any = true;
-                String nameColor = gp.getRole().isWerewolf()
-                        ? ChatColor.RED + gp.getPlayer().getName()
-                        : ChatColor.GOLD + gp.getPlayer().getName() + " (Trickster)";
                 String status = gp.isAlive() ? ChatColor.GREEN + "Alive" : ChatColor.RED + "Dead";
-                player.sendMessage(nameColor + ChatColor.GRAY + " - " + gp.getRole().getName() + " - " + status);
+                player.sendMessage(ChatColor.RED + gp.getPlayer().getName() + ChatColor.GRAY + " - " + status);
             }
         }
         if (!any) {

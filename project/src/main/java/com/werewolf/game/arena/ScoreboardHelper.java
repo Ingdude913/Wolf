@@ -27,10 +27,10 @@ public class ScoreboardHelper {
     private final Map<UUID, Integer> voteCounts = new HashMap<>();
 
     private static final String[] ENTRIES = {
-        "\u00A7a\u00A70", "\u00A7b\u00A70", "\u00A7c\u00A70", "\u00A7d\u00A70",
-        "\u00A7e\u00A70", "\u00A7f\u00A70", "\u00A710\u00A70", "\u00A711\u00A70",
-        "\u00A712\u00A70", "\u00A713\u00A70", "\u00A714\u00A70", "\u00A715\u00A70",
-        "\u00A716\u00A70", "\u00A717\u00A70", "\u00A718\u00A70", "\u00A719\u00A70"
+        "\u00A7a\u00A7a", "\u00A7b\u00A7b", "\u00A7c\u00A7c", "\u00A7d\u00A7d",
+        "\u00A7e\u00A7e", "\u00A7f\u00A7f", "\u00A7a\u00A7b", "\u00A7a\u00A7c",
+        "\u00A7a\u00A7d", "\u00A7a\u00A7e", "\u00A7a\u00A7f", "\u00A7b\u00A7c",
+        "\u00A7b\u00A7d", "\u00A7b\u00A7e", "\u00A7b\u00A7f", "\u00A7c\u00A7d"
     };
 
     public ScoreboardHelper(WerewolfPlugin plugin, Arena arena) {
