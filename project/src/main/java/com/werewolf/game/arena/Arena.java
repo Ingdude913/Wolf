@@ -9,9 +9,11 @@ import com.werewolf.game.util.ColorUtil;
 import com.werewolf.game.util.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -67,6 +69,8 @@ public class Arena {
 
     private BossBar bossBar = null;
     private int actionBarTaskId = -1;
+    private int particleTaskId = -1;
+    private final Set<UUID> particleTrailPlayers = new HashSet<>();
     private ScoreboardHelper scoreboardHelper;
 
     public Arena(WerewolfPlugin plugin, String name, String worldName) {
@@ -218,6 +222,7 @@ public class Arena {
         if (gp == null) return;
 
         players.remove(gp);
+        particleTrailPlayers.remove(player.getUniqueId());
         voteCounts.remove(player.getUniqueId());
         hunterTargets.remove(player.getUniqueId());
 
@@ -313,6 +318,7 @@ public class Arena {
             p.sendMessage(plugin.prefix() + ChatColor.GOLD + "Your role: " + ChatColor.WHITE + gp.getRole().getName());
             p.sendMessage(plugin.prefix() + ChatColor.GRAY + gp.getRole().getDescription());
         }
+        startParticleTask();
         if (sheriffEnabled) {
             startSheriffElection();
         } else {
@@ -595,6 +601,7 @@ public class Arena {
             p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
             gp.setTransformed(false);
         }
+        particleTrailPlayers.clear();
 
         createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
         startActionBar();
@@ -748,6 +755,7 @@ public class Arena {
             gp.getRole().onNightStart(p);
             giveInfoItems(gp);
         }
+        particleTrailPlayers.clear();
 
         createBossBar(ChatColor.DARK_PURPLE + "Night Time", BarColor.PURPLE);
 
@@ -823,6 +831,7 @@ public class Arena {
     public void eliminatePlayer(GamePlayer gp, String reason) {
         if (!gp.isAlive()) return;
         gp.setAlive(false);
+        particleTrailPlayers.remove(gp.getPlayer().getUniqueId());
         Player p = gp.getPlayer();
         p.setGameMode(GameMode.SPECTATOR);
         p.getInventory().clear();
@@ -938,8 +947,10 @@ public class Arena {
             inv.setLeggings(null);
             inv.setBoots(null);
             player.removePotionEffect(PotionEffectType.SPEED);
+            player.removePotionEffect(PotionEffectType.INVISIBILITY);
             inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
             gp.setTransformed(false);
+            particleTrailPlayers.remove(player.getUniqueId());
             player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
             player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish briefly!");
             return;
@@ -963,6 +974,8 @@ public class Arena {
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        particleTrailPlayers.add(player.getUniqueId());
         gp.setTransformed(true);
         player.sendMessage(plugin.prefix() + ChatColor.RED + "You transform into a werewolf!");
     }
@@ -993,6 +1006,7 @@ public class Arena {
         cancelTask();
         removeBossBar();
         stopActionBar();
+        stopParticleTask();
         broadcast(ChatColor.GOLD + "===== GAME OVER =====");
         broadcast(ChatColor.YELLOW + reason);
         broadcast(ChatColor.GOLD + "The " + winningTeam + " wins!");
@@ -1042,6 +1056,7 @@ public class Arena {
         cancelTask();
         removeBossBar();
         stopActionBar();
+        stopParticleTask();
         for (GamePlayer gp : players) {
             Player p = gp.getPlayer();
             p.setGameMode(GameMode.SURVIVAL);
@@ -1369,7 +1384,14 @@ public class Arena {
         switch (ability) {
             case "vanish":
                 player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                particleTrailPlayers.add(player.getUniqueId());
                 player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You vanish into the shadows for 8 seconds!");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        particleTrailPlayers.remove(player.getUniqueId());
+                    }
+                }.runTaskLater(plugin, durationTicks);
                 break;
             case "sprint":
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, 4, false, false));
@@ -1407,6 +1429,8 @@ public class Arena {
                 inv.setChestplate(fakeChest);
                 inv.setLeggings(fakeLegs);
                 inv.setBoots(fakeBoots);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                particleTrailPlayers.add(player.getUniqueId());
                 player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You look like a werewolf but won't appear on the wolf team list.");
                 new BukkitRunnable() {
                     @Override
@@ -1417,6 +1441,7 @@ public class Arena {
                             inv.setLeggings(oldLegs);
                             inv.setBoots(oldBoots);
                         }
+                        particleTrailPlayers.remove(player.getUniqueId());
                     }
                 }.runTaskLater(plugin, durationTicks);
                 break;
@@ -1464,6 +1489,29 @@ public class Arena {
 
     private void setCooldown(String key) {
         abilityCooldowns.put(key, System.currentTimeMillis());
+    }
+
+    private void startParticleTask() {
+        particleTaskId = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (UUID id : particleTrailPlayers) {
+                    Player p = Bukkit.getPlayer(id);
+                    if (p != null && p.isOnline()) {
+                        Location loc = p.getLocation().add(0, 1, 0);
+                        p.getWorld().spawnParticle(Particle.REDSTONE, loc, 5, 0.3, 0.6, 0.3, new Particle.DustOptions(Color.RED, 1.0f));
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 5L).getTaskId();
+    }
+
+    private void stopParticleTask() {
+        if (particleTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(particleTaskId);
+            particleTaskId = -1;
+        }
+        particleTrailPlayers.clear();
     }
 
     public void broadcast(String message) {
