@@ -6,7 +6,6 @@ import com.werewolf.game.game.Phase;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.NameTagVisibility;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
@@ -189,27 +188,6 @@ public class ScoreboardHelper {
             objective.unregister();
             objective = null;
         }
-    }
-
-    public void hideNametags() {
-        Team team = scoreboard.getTeam("nametag_control");
-        if (team == null) {
-            team = scoreboard.registerNewTeam("nametag_control");
-        }
-        team.setNameTagVisibility(NameTagVisibility.NEVER);
-        for (GamePlayer gp : arena.getPlayers()) {
-            if (!team.hasEntry(gp.getPlayer().getName())) {
-                team.addEntry(gp.getPlayer().getName());
-            }
-        }
-    }
-
-    public void showNametags() {
-        Team team = scoreboard.getTeam("nametag_control");
-        if (team == null) {
-            team = scoreboard.registerNewTeam("nametag_control");
-        }
-        team.setNameTagVisibility(NameTagVisibility.ALWAYS);
     }
 
     private void applyToPlayers() {

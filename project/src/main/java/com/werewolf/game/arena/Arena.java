@@ -217,7 +217,6 @@ public class Arena {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null) return;
 
-        showPlayerToOthers(player);
         players.remove(gp);
         voteCounts.remove(player.getUniqueId());
         hunterTargets.remove(player.getUniqueId());
@@ -321,7 +320,6 @@ public class Arena {
             firstDay = true;
             giveDayItems();
             scoreboardHelper.setupGame();
-            scoreboardHelper.showNametags();
             for (GamePlayer gp : getAlivePlayers()) {
                 gp.getRole().onDayStart(gp.getPlayer());
             }
@@ -339,6 +337,7 @@ public class Arena {
 
         for (GamePlayer gp : getAlivePlayers()) {
             Player p = gp.getPlayer();
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
             p.getInventory().clear();
             p.getInventory().setItem(getItemSlot("vote-sheriff"), ItemBuilder.create(plugin, "vote-sheriff"));
             giveInfoItems(gp);
@@ -346,7 +345,6 @@ public class Arena {
 
         createBossBar(ChatColor.GOLD + "Sheriff Election", BarColor.YELLOW);
         scoreboardHelper.setupGame();
-        scoreboardHelper.showNametags();
 
         taskId = new BukkitRunnable() {
             @Override
@@ -594,12 +592,11 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            showPlayerToOthers(p);
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
             gp.setTransformed(false);
         }
 
         createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
-        scoreboardHelper.showNametags();
         startActionBar();
 
         taskId = new BukkitRunnable() {
@@ -745,7 +742,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            hidePlayerFromOthers(p);
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
             gp.setTransformed(false);
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
@@ -753,7 +750,6 @@ public class Arena {
         }
 
         createBossBar(ChatColor.DARK_PURPLE + "Night Time", BarColor.PURPLE);
-        scoreboardHelper.hideNametags();
 
         broadcast(ChatColor.DARK_PURPLE + "Night falls! Use your abilities wisely.");
 
@@ -828,7 +824,6 @@ public class Arena {
         if (!gp.isAlive()) return;
         gp.setAlive(false);
         Player p = gp.getPlayer();
-        showPlayerToOthers(p);
         p.setGameMode(GameMode.SPECTATOR);
         p.getInventory().clear();
         broadcast(ChatColor.RED + p.getName() + " has been " + reason + "!");
@@ -945,7 +940,8 @@ public class Arena {
             player.removePotionEffect(PotionEffectType.SPEED);
             inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
             gp.setTransformed(false);
-            player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish into the night!");
+            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish briefly!");
             return;
         }
 
@@ -1013,7 +1009,6 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            showPlayerToOthers(p);
             Location lobby = plugin.getArenaManager().getGlobalLobby();
             if (lobby != null) {
                 p.teleport(lobby);
@@ -1034,7 +1029,6 @@ public class Arena {
         mermaidFreezeUntil = 0;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
-        scoreboardHelper.showNametags();
     }
 
     private void revealAllRoles() {
@@ -1059,7 +1053,6 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            showPlayerToOthers(p);
             Location lobby = plugin.getArenaManager().getGlobalLobby();
             if (lobby != null) {
                 p.teleport(lobby);
@@ -1079,7 +1072,6 @@ public class Arena {
         mermaidFreezeUntil = 0;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
-        scoreboardHelper.showNametags();
         broadcast(ChatColor.RED + "The game has been force stopped.");
     }
 
@@ -1376,7 +1368,8 @@ public class Arena {
 
         switch (ability) {
             case "vanish":
-                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You are already hidden in the night!");
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You vanish into the shadows for 8 seconds!");
                 break;
             case "sprint":
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, 4, false, false));
@@ -1414,7 +1407,6 @@ public class Arena {
                 inv.setChestplate(fakeChest);
                 inv.setLeggings(fakeLegs);
                 inv.setBoots(fakeBoots);
-                showPlayerToOthers(player);
                 player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You look like a werewolf but won't appear on the wolf team list.");
                 new BukkitRunnable() {
                     @Override
@@ -1424,7 +1416,6 @@ public class Arena {
                             inv.setChestplate(oldChest);
                             inv.setLeggings(oldLegs);
                             inv.setBoots(oldBoots);
-                            hidePlayerFromOthers(player);
                         }
                     }
                 }.runTaskLater(plugin, durationTicks);
@@ -1482,21 +1473,4 @@ public class Arena {
         }
     }
 
-    private void showPlayerToOthers(Player shown) {
-        for (GamePlayer gp : players) {
-            Player other = gp.getPlayer();
-            if (!other.getUniqueId().equals(shown.getUniqueId())) {
-                other.showPlayer(plugin, shown);
-            }
-        }
-    }
-
-    private void hidePlayerFromOthers(Player hidden) {
-        for (GamePlayer gp : players) {
-            Player other = gp.getPlayer();
-            if (!other.getUniqueId().equals(hidden.getUniqueId())) {
-                other.hidePlayer(plugin, hidden);
-            }
-        }
-    }
 }
