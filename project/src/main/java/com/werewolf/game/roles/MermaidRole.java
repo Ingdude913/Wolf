@@ -16,16 +16,16 @@ public class MermaidRole extends Role {
 
     public MermaidRole() {
         super("Mermaid", Team.GOOD,
-                "You are a Mermaid! Each night, you can sing once to freeze the werewolves' will, " +
-                        "preventing them from killing for a period of time. " +
+                "You are a Mermaid! Each night, you can sing once to freeze the werewolves in place, " +
+                        "preventing them from moving for a period of time. " +
                         "Use your Conch Shell during the night to sing. " +
-                        "Choose the right moment to save lives!");
+                        "Choose the right moment to protect the village!");
     }
 
     @Override
     public void onNightStart(Player player) {
         hasSungTonight = false;
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&bNight falls! You may sing once to freeze the werewolves' will."));
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&bNight falls! You may sing once to freeze the werewolves in place."))
         player.getInventory().addItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "mermaid-shell"));
     }
 

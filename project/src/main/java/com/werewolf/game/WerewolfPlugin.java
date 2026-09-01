@@ -38,6 +38,7 @@ public class WerewolfPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDropListener(this), this);
         getServer().getPluginManager().registerEvents(new FoodLevelListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerMoveListener(this), this);
 
         getLogger().info("Werewolf plugin enabled!");
     }

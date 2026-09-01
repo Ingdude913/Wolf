@@ -785,10 +785,6 @@ public class Arena {
         if (killerGp == null || targetGp == null) return;
         if (!killerGp.getRole().isWerewolf()) return;
         if (!killerGp.isAlive() || !targetGp.isAlive()) return;
-        if (isMermaidFreezeActive()) {
-            killer.sendMessage(plugin.prefix() + ChatColor.AQUA + "The Mermaid's song has frozen your will! You cannot kill right now.");
-            return;
-        }
         if (targetGp.getRole().isWerewolf()) {
             killer.sendMessage(plugin.prefix() + ChatColor.RED + "You cannot kill a fellow werewolf!");
             return;
@@ -1377,11 +1373,16 @@ public class Arena {
         mermaidRole.setSungTonight(true);
         mermaidFreezeUntil = System.currentTimeMillis() + (mermaidFreezeDuration * 1000L);
         player.getInventory().removeItem(ItemBuilder.create(plugin, "mermaid-shell"));
-        player.sendMessage(plugin.prefix() + ChatColor.AQUA + "You sing the Mermaid's song! The werewolves' will is frozen for " + mermaidFreezeDuration + " seconds!");
+        player.sendMessage(plugin.prefix() + ChatColor.AQUA + "You sing the Mermaid's song! The werewolves are frozen in place for " + mermaidFreezeDuration + " seconds!");
         broadcast(ChatColor.AQUA + "A haunting melody echoes through the night... The werewolves are frozen in place!");
+        for (GamePlayer wgp : players) {
+            if (wgp.isAlive() && wgp.getRole().isWerewolf()) {
+                wgp.getPlayer().sendMessage(plugin.prefix() + ChatColor.AQUA + "The Mermaid's song has frozen you! You cannot move for " + mermaidFreezeDuration + " seconds!");
+            }
+        }
     }
 
-    private boolean isMermaidFreezeActive() {
+    public boolean isMermaidFreezeActive() {
         return mermaidFreezeUntil > 0 && System.currentTimeMillis() < mermaidFreezeUntil;
     }
 
