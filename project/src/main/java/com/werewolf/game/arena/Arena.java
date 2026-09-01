@@ -594,11 +594,19 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            showPlayerToOthers(p);
+            hidePlayerFromOthers(p);
             gp.setTransformed(false);
         }
 
         createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (GamePlayer gp : getAlivePlayers()) {
+                    showPlayerToOthers(gp.getPlayer());
+                }
+            }
+        }.runTaskLater(plugin, 100L);
         scoreboardHelper.showNametags();
         startActionBar();
 
@@ -745,12 +753,21 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            showPlayerToOthers(p);
+            hidePlayerFromOthers(p);
             gp.setTransformed(false);
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
             giveInfoItems(gp);
         }
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (GamePlayer gp : getAlivePlayers()) {
+                    showPlayerToOthers(gp.getPlayer());
+                }
+            }
+        }.runTaskLater(plugin, 100L);
 
         createBossBar(ChatColor.DARK_PURPLE + "Night Time", BarColor.PURPLE);
         scoreboardHelper.hideNametags();
@@ -977,6 +994,7 @@ public class Arena {
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
         gp.setTransformed(true);
         player.sendMessage(plugin.prefix() + ChatColor.RED + "You transform into a werewolf!");
     }
@@ -1433,6 +1451,7 @@ public class Arena {
                 inv.setChestplate(fakeChest);
                 inv.setLeggings(fakeLegs);
                 inv.setBoots(fakeBoots);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
                 player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You look like a werewolf but won't appear on the wolf team list.");
                 new BukkitRunnable() {
                     @Override
