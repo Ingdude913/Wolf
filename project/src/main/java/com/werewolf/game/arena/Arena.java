@@ -656,8 +656,10 @@ public class Arena {
         if (voterGp.getRole().isMasochist()) {
             voterGp.setVoted(true);
             voterGp.setVotedFor(target);
+            int displayedCount = voteCounts.getOrDefault(target.getUniqueId(), 0) + 1;
             voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + "!");
             voter.sendMessage(plugin.prefix() + ChatColor.DARK_GRAY + "Your vote does not count.");
+            broadcast(ChatColor.YELLOW + voter.getName() + " has voted. (" + displayedCount + " votes for " + target.getName() + ")");
             return;
         }
         voterGp.setVoted(true);

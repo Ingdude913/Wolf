@@ -3,6 +3,7 @@ package com.werewolf.game.commands;
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.arena.ArenaManager;
+import com.werewolf.game.game.GamePlayer;
 import com.werewolf.game.util.WorldManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -497,6 +498,15 @@ public class WerewolfCommand implements CommandExecutor, TabCompleter {
             } else if (sub.equals("leave")) {
                 completions.add("");
             } else if (sub.equals("setrole")) {
+                for (Arena arena : plugin.getArenaManager().getArenas()) {
+                    for (GamePlayer gp : arena.getPlayers()) {
+                        completions.add(gp.getPlayer().getName());
+                    }
+                }
+            }
+        } else if (args.length == 3) {
+            String sub = args[0].toLowerCase();
+            if (sub.equals("setrole")) {
                 completions.add("werewolf");
                 completions.add("villager");
                 completions.add("witch");
