@@ -594,7 +594,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            showPlayerToOthers(p);
             gp.setTransformed(false);
         }
 
@@ -745,7 +745,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, (nightDuration + 5) * 20, 0, false, false));
+            hidePlayerFromOthers(p);
             gp.setTransformed(false);
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
@@ -943,11 +943,9 @@ public class Arena {
             inv.setLeggings(null);
             inv.setBoots(null);
             player.removePotionEffect(PotionEffectType.SPEED);
-            player.removePotionEffect(PotionEffectType.INVISIBILITY);
             inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
             gp.setTransformed(false);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, (phaseTimer + 5) * 20, 0, false, false));
-            player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish briefly!");
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish into the night!");
             return;
         }
 
@@ -969,7 +967,6 @@ public class Arena {
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
         gp.setTransformed(true);
         player.sendMessage(plugin.prefix() + ChatColor.RED + "You transform into a werewolf!");
     }
@@ -1379,8 +1376,7 @@ public class Arena {
 
         switch (ability) {
             case "vanish":
-                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
-                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You vanish into the shadows for 8 seconds!");
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You are already hidden in the night!");
                 break;
             case "sprint":
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, 4, false, false));
@@ -1418,7 +1414,7 @@ public class Arena {
                 inv.setChestplate(fakeChest);
                 inv.setLeggings(fakeLegs);
                 inv.setBoots(fakeBoots);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                showPlayerToOthers(player);
                 player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You look like a werewolf but won't appear on the wolf team list.");
                 new BukkitRunnable() {
                     @Override
@@ -1428,6 +1424,7 @@ public class Arena {
                             inv.setChestplate(oldChest);
                             inv.setLeggings(oldLegs);
                             inv.setBoots(oldBoots);
+                            hidePlayerFromOthers(player);
                         }
                     }
                 }.runTaskLater(plugin, durationTicks);
@@ -1490,6 +1487,15 @@ public class Arena {
             Player other = gp.getPlayer();
             if (!other.getUniqueId().equals(shown.getUniqueId())) {
                 other.showPlayer(plugin, shown);
+            }
+        }
+    }
+
+    private void hidePlayerFromOthers(Player hidden) {
+        for (GamePlayer gp : players) {
+            Player other = gp.getPlayer();
+            if (!other.getUniqueId().equals(hidden.getUniqueId())) {
+                other.hidePlayer(plugin, hidden);
             }
         }
     }
