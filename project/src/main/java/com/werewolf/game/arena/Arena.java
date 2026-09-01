@@ -932,6 +932,13 @@ public class Arena {
             p.sendMessage(plugin.prefix() + ChatColor.GRAY + "You were the " + gp.getRole().getName() + ".");
             p.setGameMode(GameMode.SURVIVAL);
             p.getInventory().clear();
+            p.getInventory().setHelmet(null);
+            p.getInventory().setChestplate(null);
+            p.getInventory().setLeggings(null);
+            p.getInventory().setBoots(null);
+            for (PotionEffect effect : p.getActivePotionEffects()) {
+                p.removePotionEffect(effect.getType());
+            }
             Location lobby = plugin.getArenaManager().getGlobalLobby();
             if (lobby != null) {
                 p.teleport(lobby);
@@ -967,6 +974,13 @@ public class Arena {
             Player p = gp.getPlayer();
             p.setGameMode(GameMode.SURVIVAL);
             p.getInventory().clear();
+            p.getInventory().setHelmet(null);
+            p.getInventory().setChestplate(null);
+            p.getInventory().setLeggings(null);
+            p.getInventory().setBoots(null);
+            for (PotionEffect effect : p.getActivePotionEffects()) {
+                p.removePotionEffect(effect.getType());
+            }
             Location lobby = plugin.getArenaManager().getGlobalLobby();
             if (lobby != null) {
                 p.teleport(lobby);

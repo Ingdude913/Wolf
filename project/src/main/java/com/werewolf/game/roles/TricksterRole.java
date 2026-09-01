@@ -25,16 +25,13 @@ public class TricksterRole extends Role {
         player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&cNight falls! The werewolves think you are one of them."));
         player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&7You receive werewolf items to blend in, but your axe is fake and cannot kill."));
         ItemStack armor = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor");
-        ItemStack axe = ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe");
-        axe = ItemBuilder.rename(axe, "&4&lFake Werewolf Axe &7(Cannot kill)");
-        player.getInventory().addItem(armor, axe);
+        player.getInventory().addItem(armor);
     }
 
     @Override
     public void onDayStart(Player player) {
         player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&eDay breaks! Your deception items are removed."));
         player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-armor"));
-        player.getInventory().removeItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "werewolf-axe"));
     }
 
     @Override
