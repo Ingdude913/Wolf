@@ -101,6 +101,11 @@ public class GamePlayer {
         return null;
     }
 
+    public MasochistRole asMasochist() {
+        if (role instanceof MasochistRole) return (MasochistRole) role;
+        return null;
+    }
+
     public boolean isSheriff() {
         return isSheriff;
     }

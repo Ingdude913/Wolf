@@ -52,6 +52,10 @@ public abstract class Role {
         return false;
     }
 
+    public boolean isMasochist() {
+        return false;
+    }
+
     public boolean canSeeWerewolves() {
         return false;
     }

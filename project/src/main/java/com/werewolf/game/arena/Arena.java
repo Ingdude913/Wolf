@@ -81,6 +81,9 @@ public class Arena {
         this.mermaidFreezeDuration = plugin.getConfig().getInt("mermaid-freeze-duration", 15);
         this.scoreboardHelper = new ScoreboardHelper(plugin, this);
         this.scoreboardHelper.setupLobby();
+
+        roleSelection.put("werewolf", 1);
+        roleSelection.put("villager", 1);
     }
 
     public int getMinPlayers() {
@@ -459,23 +462,20 @@ public class Arena {
         int tricksterCount = roleSelection.getOrDefault("trickster", 0);
         int ninjaCount = roleSelection.getOrDefault("ninja", 0);
         int mermaidCount = roleSelection.getOrDefault("mermaid", 0);
+        int masochistCount = roleSelection.getOrDefault("masochist", 0);
 
-        int selectedTotal = werewolfCount + villagerCount + witchCount + seerCount + hunterCount + tricksterCount + ninjaCount + mermaidCount;
+        int selectedTotal = werewolfCount + villagerCount + witchCount + seerCount + hunterCount + tricksterCount + ninjaCount + mermaidCount + masochistCount;
         if (selectedTotal > total) {
             int overflow = selectedTotal - total;
-            if (villagerCount >= overflow) {
-                villagerCount -= overflow;
-            } else {
-                overflow -= villagerCount;
-                villagerCount = 0;
-                if (mermaidCount >= overflow) { mermaidCount -= overflow; } else { overflow -= mermaidCount; mermaidCount = 0; }
-                if (ninjaCount >= overflow) { ninjaCount -= overflow; } else { overflow -= ninjaCount; ninjaCount = 0; }
-                if (tricksterCount >= overflow) { tricksterCount -= overflow; } else { overflow -= tricksterCount; tricksterCount = 0; }
-                if (hunterCount >= overflow) { hunterCount -= overflow; } else { overflow -= hunterCount; hunterCount = 0; }
-                if (seerCount >= overflow) { seerCount -= overflow; } else { overflow -= seerCount; seerCount = 0; }
-                if (witchCount >= overflow) { witchCount -= overflow; } else { overflow -= witchCount; witchCount = 0; }
-                if (werewolfCount >= overflow) { werewolfCount -= overflow; } else { werewolfCount = 0; }
-            }
+            if (masochistCount >= overflow) { masochistCount -= overflow; overflow = 0; } else { overflow -= masochistCount; masochistCount = 0; }
+            if (overflow > 0 && mermaidCount >= overflow) { mermaidCount -= overflow; overflow = 0; } else { overflow -= mermaidCount; mermaidCount = 0; }
+            if (overflow > 0 && ninjaCount >= overflow) { ninjaCount -= overflow; overflow = 0; } else { overflow -= ninjaCount; ninjaCount = 0; }
+            if (overflow > 0 && tricksterCount >= overflow) { tricksterCount -= overflow; overflow = 0; } else { overflow -= tricksterCount; tricksterCount = 0; }
+            if (overflow > 0 && hunterCount >= overflow) { hunterCount -= overflow; overflow = 0; } else { overflow -= hunterCount; hunterCount = 0; }
+            if (overflow > 0 && seerCount >= overflow) { seerCount -= overflow; overflow = 0; } else { overflow -= seerCount; seerCount = 0; }
+            if (overflow > 0 && witchCount >= overflow) { witchCount -= overflow; overflow = 0; } else { overflow -= witchCount; witchCount = 0; }
+            if (overflow > 0 && villagerCount >= overflow) { villagerCount -= overflow; overflow = 0; } else { overflow -= villagerCount; villagerCount = 0; }
+            if (overflow > 0 && werewolfCount >= overflow) { werewolfCount -= overflow; overflow = 0; } else { overflow -= werewolfCount; werewolfCount = 0; }
         }
 
         if (!debugMode) {
@@ -504,6 +504,9 @@ public class Arena {
         }
         for (int i = 0; i < mermaidCount && index < total; i++) {
             playerList.get(index++).setRole(new MermaidRole());
+        }
+        for (int i = 0; i < masochistCount && index < total; i++) {
+            playerList.get(index++).setRole(new MasochistRole());
         }
         while (index < total) {
             playerList.get(index++).setRole(new VillagerRole());
@@ -629,6 +632,12 @@ public class Arena {
         if (eliminated == null) return;
         GamePlayer gp = getGamePlayer(eliminated);
         if (gp == null || !gp.isAlive()) return;
+        if (gp.getRole().isMasochist()) {
+            broadcast(ChatColor.GOLD + "===== MASOCHIST WINS =====");
+            broadcast(ChatColor.YELLOW + eliminated.getName() + " received the most votes and was the Masochist! They win!");
+            endGame("Masochist", eliminated.getName() + " (Masochist) received the most votes and wins!");
+            return;
+        }
         eliminatePlayer(gp, "voted out by the village");
     }
 
@@ -642,6 +651,13 @@ public class Arena {
         }
         if (voterGp.hasVoted()) {
             voter.sendMessage(plugin.prefix() + ChatColor.RED + "You have already voted! Use the Revoke Vote item to change your vote.");
+            return;
+        }
+        if (voterGp.getRole().isMasochist()) {
+            voterGp.setVoted(true);
+            voterGp.setVotedFor(target);
+            voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + "!");
+            voter.sendMessage(plugin.prefix() + ChatColor.DARK_GRAY + "Your vote does not count.");
             return;
         }
         voterGp.setVoted(true);
@@ -661,7 +677,7 @@ public class Arena {
             return;
         }
         Player target = voterGp.getVotedFor();
-        if (target != null) {
+        if (target != null && !voterGp.getRole().isMasochist()) {
             int voteWeight = voterGp.isSheriff() ? 2 : 1;
             voteCounts.merge(target.getUniqueId(), -voteWeight, Integer::sum);
             if (voteCounts.getOrDefault(target.getUniqueId(), 0) <= 0) {
@@ -912,6 +928,7 @@ public class Arena {
 
     private boolean checkWinCondition() {
         if (debugMode) return false;
+        if (players.isEmpty()) return true;
         Set<GamePlayer> alive = getAlivePlayers();
         boolean badAlive = alive.stream().anyMatch(gp -> gp.getRole().isBad());
         boolean goodAlive = alive.stream().anyMatch(gp -> gp.getRole().isGood());
@@ -1108,6 +1125,9 @@ public class Arena {
             case "mermaid":
                 role = new MermaidRole();
                 break;
+            case "masochist":
+                role = new MasochistRole();
+                break;
             default:
                 return;
         }
@@ -1154,6 +1174,7 @@ public class Arena {
         long villagers = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.VillagerRole).count();
         long ninjas = players.stream().filter(gp -> gp.getRole().isNinja()).count();
         long mermaids = players.stream().filter(gp -> gp.getRole().isMermaid()).count();
+        long masochists = players.stream().filter(gp -> gp.getRole().isMasochist()).count();
 
         int dayDur = plugin.getConfig().getInt("day-duration", 120);
         int nightDur = plugin.getConfig().getInt("night-duration", 60);
@@ -1167,6 +1188,7 @@ public class Arena {
         player.sendMessage(ChatColor.GREEN + "Villagers: " + ChatColor.WHITE + villagers);
         player.sendMessage(ChatColor.DARK_PURPLE + "Ninjas: " + ChatColor.WHITE + ninjas);
         player.sendMessage(ChatColor.AQUA + "Mermaids: " + ChatColor.WHITE + mermaids);
+        player.sendMessage(ChatColor.DARK_GREEN + "Masochists: " + ChatColor.WHITE + masochists);
         player.sendMessage(ChatColor.WHITE + "Total Players: " + ChatColor.WHITE + total);
         player.sendMessage(ChatColor.YELLOW + "Day Duration: " + ChatColor.WHITE + dayDur + " seconds");
         player.sendMessage(ChatColor.BLUE + "Night Duration: " + ChatColor.WHITE + nightDur + " seconds");

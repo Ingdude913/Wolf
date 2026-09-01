@@ -25,7 +25,7 @@ public class MermaidRole extends Role {
     @Override
     public void onNightStart(Player player) {
         hasSungTonight = false;
-        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&bNight falls! You may sing once to freeze the werewolves in place."))
+        player.sendMessage(WerewolfPlugin.getInstance().prefix() + ColorUtil.color("&bNight falls! You may sing once to freeze the werewolves in place."));
         player.getInventory().addItem(ItemBuilder.create(WerewolfPlugin.getInstance(), "mermaid-shell"));
     }
 
