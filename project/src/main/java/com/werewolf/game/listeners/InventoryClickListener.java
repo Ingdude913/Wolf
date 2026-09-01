@@ -3,12 +3,15 @@ package com.werewolf.game.listeners;
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
+import com.werewolf.game.game.Phase;
 import com.werewolf.game.gui.NinjaGUI;
+import com.werewolf.game.gui.RoleSelectorGUI;
 import com.werewolf.game.gui.SeerGUI;
 import com.werewolf.game.gui.SheriffGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -65,6 +68,27 @@ public class InventoryClickListener implements Listener {
 
             arena.ninjaSelectAbility(player, ability);
             player.closeInventory();
+        } else if (RoleSelectorGUI.isRoleSelectorGUI(title)) {
+            event.setCancelled(true);
+
+            if (arena == null) return;
+            if (arena.getPhase() != Phase.LOBBY) return;
+
+            int slot = event.getRawSlot();
+            if (slot < 0 || slot >= inv.getSize()) return;
+
+            String roleKey = RoleSelectorGUI.getRoleAtSlot(player, slot);
+            if (roleKey == null) return;
+
+            if (event.getClick() == ClickType.LEFT) {
+                arena.adjustRoleSelection(roleKey, 1);
+                player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Added one " + roleKey + "! Total: " + arena.getRoleSelection().getOrDefault(roleKey, 0));
+                arena.openRoleSelector(player);
+            } else if (event.getClick() == ClickType.RIGHT) {
+                arena.adjustRoleSelection(roleKey, -1);
+                player.sendMessage(plugin.prefix() + ChatColor.RED + "Removed one " + roleKey + "! Total: " + arena.getRoleSelection().getOrDefault(roleKey, 0));
+                arena.openRoleSelector(player);
+            }
         } else if (SheriffGUI.isSheriffGUI(title)) {
             event.setCancelled(true);
 
@@ -107,6 +131,8 @@ public class InventoryClickListener implements Listener {
             NinjaGUI.clearMapping(player);
         } else if (SheriffGUI.isSheriffGUI(title)) {
             SheriffGUI.clearMapping(player);
+        } else if (RoleSelectorGUI.isRoleSelectorGUI(title)) {
+            RoleSelectorGUI.clearMapping(player);
         }
     }
 }

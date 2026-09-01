@@ -2,6 +2,7 @@ package com.werewolf.game.arena;
 
 import com.werewolf.game.WerewolfPlugin;
 import com.werewolf.game.game.*;
+import com.werewolf.game.gui.RoleSelectorGUI;
 import com.werewolf.game.gui.SheriffGUI;
 import com.werewolf.game.roles.*;
 import com.werewolf.game.util.ColorUtil;
@@ -56,6 +57,8 @@ public class Arena {
 
     private final Map<UUID, Integer> sheriffElectionVotes = new HashMap<>();
     private UUID sheriffId = null;
+
+    private final Map<String, Integer> roleSelection = new HashMap<>();
 
     private BossBar bossBar = null;
     private int actionBarTaskId = -1;
@@ -185,6 +188,10 @@ public class Arena {
         player.getInventory().clear();
         player.setHealth(20);
         player.setFoodLevel(20);
+
+        if (phase == Phase.LOBBY) {
+            player.getInventory().setItem(getItemSlot("role-selector"), ItemBuilder.create(plugin, "role-selector"));
+        }
 
         if (bossBar != null) {
             bossBar.addPlayer(player);
@@ -417,17 +424,55 @@ public class Arena {
         voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "Your sheriff election vote has been revoked.");
     }
 
+    public Map<String, Integer> getRoleSelection() {
+        return roleSelection;
+    }
+
+    public void adjustRoleSelection(String roleKey, int delta) {
+        int current = roleSelection.getOrDefault(roleKey, 0);
+        int newValue = Math.max(0, current + delta);
+        roleSelection.put(roleKey, newValue);
+    }
+
+    public void openRoleSelector(Player player) {
+        RoleSelectorGUI.open(player, roleSelection);
+    }
+
     private void assignRoles() {
         List<GamePlayer> playerList = new ArrayList<>(players);
         Collections.shuffle(playerList);
 
         int total = playerList.size();
-        int werewolfCount = Math.max(1, total / 4);
-        int tricksterCount = total >= 6 ? 1 : 0;
-        int witchCount = total >= 4 ? 1 : 0;
-        int seerCount = total >= 4 ? 1 : 0;
-        int hunterCount = total >= 5 ? 1 : 0;
-        int ninjaCount = total >= 6 ? 1 : 0;
+
+        int werewolfCount = roleSelection.getOrDefault("werewolf", 0);
+        int villagerCount = roleSelection.getOrDefault("villager", 0);
+        int witchCount = roleSelection.getOrDefault("witch", 0);
+        int seerCount = roleSelection.getOrDefault("seer", 0);
+        int hunterCount = roleSelection.getOrDefault("hunter", 0);
+        int tricksterCount = roleSelection.getOrDefault("trickster", 0);
+        int ninjaCount = roleSelection.getOrDefault("ninja", 0);
+
+        if (!debugMode) {
+            if (werewolfCount < 1) werewolfCount = 1;
+            if (villagerCount < 1) villagerCount = 1;
+        }
+
+        int selectedTotal = werewolfCount + villagerCount + witchCount + seerCount + hunterCount + tricksterCount + ninjaCount;
+        if (selectedTotal > total) {
+            int overflow = selectedTotal - total;
+            if (villagerCount >= overflow) {
+                villagerCount -= overflow;
+            } else {
+                overflow -= villagerCount;
+                villagerCount = 0;
+                if (ninjaCount >= overflow) { ninjaCount -= overflow; } else { overflow -= ninjaCount; ninjaCount = 0; }
+                if (tricksterCount >= overflow) { tricksterCount -= overflow; } else { overflow -= tricksterCount; tricksterCount = 0; }
+                if (hunterCount >= overflow) { hunterCount -= overflow; } else { overflow -= hunterCount; hunterCount = 0; }
+                if (seerCount >= overflow) { seerCount -= overflow; } else { overflow -= seerCount; seerCount = 0; }
+                if (witchCount >= overflow) { witchCount -= overflow; } else { overflow -= witchCount; witchCount = 0; }
+                if (werewolfCount >= overflow) { werewolfCount -= overflow; } else { werewolfCount = 0; }
+            }
+        }
 
         int index = 0;
         for (int i = 0; i < werewolfCount && index < total; i++) {
@@ -897,6 +942,7 @@ public class Arena {
         hunterTargets.clear();
         pendingNightDeaths.clear();
         abilityCooldowns.clear();
+        roleSelection.clear();
         sheriffId = null;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
@@ -930,6 +976,7 @@ public class Arena {
         hunterTargets.clear();
         pendingNightDeaths.clear();
         abilityCooldowns.clear();
+        roleSelection.clear();
         sheriffId = null;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();

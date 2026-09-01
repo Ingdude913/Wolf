@@ -97,3 +97,7 @@ items:
     material: PAPER
     name: "&6&lVote Sheriff &7(Right-click to vote for the Sheriff)"
     slot: 0
+  role-selector:
+    material: NETHER_STAR
+    name: "&b&lRole Selector &7(Right-click to setup roles)"
+    slot: 4

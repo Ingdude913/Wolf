@@ -5,6 +5,7 @@ import com.werewolf.game.arena.Arena;
 import com.werewolf.game.game.GamePlayer;
 import com.werewolf.game.game.Phase;
 import com.werewolf.game.gui.NinjaGUI;
+import com.werewolf.game.gui.RoleSelectorGUI;
 import com.werewolf.game.gui.SeerGUI;
 import com.werewolf.game.gui.SheriffGUI;
 import com.werewolf.game.util.ItemBuilder;
@@ -33,6 +34,14 @@ public class PlayerInteractListener implements Listener {
         if (gp == null || !gp.isAlive()) return;
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "role-selector")) {
+                event.setCancelled(true);
+                if (arena.getPhase() == Phase.LOBBY) {
+                    arena.openRoleSelector(player);
+                }
+                return;
+            }
+
             if (ItemBuilder.isItemKey(plugin, event.getItem(), "vote-sheriff")) {
                 event.setCancelled(true);
                 if (arena.getPhase() == Phase.SHERIFF_ELECTION) {
