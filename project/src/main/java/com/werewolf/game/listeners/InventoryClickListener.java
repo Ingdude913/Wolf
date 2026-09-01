@@ -84,11 +84,11 @@ public class InventoryClickListener implements Listener {
             if (event.getClick() == ClickType.LEFT) {
                 arena.adjustRoleSelection(roleKey, 1);
                 player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Added one " + roleKey + "! Total: " + arena.getRoleSelection().getOrDefault(roleKey, 0));
-                arena.openRoleSelector(player);
+                RoleSelectorGUI.update(player, arena.getRoleSelection());
             } else if (event.getClick() == ClickType.RIGHT) {
                 arena.adjustRoleSelection(roleKey, -1);
                 player.sendMessage(plugin.prefix() + ChatColor.RED + "Removed one " + roleKey + "! Total: " + arena.getRoleSelection().getOrDefault(roleKey, 0));
-                arena.openRoleSelector(player);
+                RoleSelectorGUI.update(player, arena.getRoleSelection());
             }
         } else if (SheriffGUI.isSheriffGUI(title)) {
             event.setCancelled(true);

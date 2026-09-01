@@ -900,15 +900,25 @@ public class Arena {
 
     private boolean checkWinCondition() {
         if (debugMode) return false;
-        long badAlive = getAlivePlayers().stream().filter(gp -> gp.getRole().isBad()).count();
-        long goodAlive = getAlivePlayers().stream().filter(gp -> gp.getRole().isGood()).count();
-
-        if (badAlive == 0) {
+        Set<GamePlayer> alive = getAlivePlayers();
+        if (alive.size() <= 1) {
+            if (alive.size() == 1) {
+                GamePlayer last = alive.iterator().next();
+                String teamName = last.getRole().isBad() ? "Bad team" : "Good team";
+                endGame(teamName, last.getPlayer().getName() + " is the last one standing!");
+            } else {
+                endGame("Draw", "Everyone has been eliminated!");
+            }
+            return true;
+        }
+        boolean badAlive = alive.stream().anyMatch(gp -> gp.getRole().isBad());
+        boolean goodAlive = alive.stream().anyMatch(gp -> gp.getRole().isGood());
+        if (!badAlive) {
             endGame("Good team", "All werewolves have been eliminated!");
             return true;
         }
-        if (badAlive >= goodAlive) {
-            endGame("Bad team", "The werewolves have overrun the village!");
+        if (!goodAlive) {
+            endGame("Bad team", "All villagers have been eliminated!");
             return true;
         }
         return false;

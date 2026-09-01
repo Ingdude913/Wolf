@@ -30,7 +30,18 @@ public class RoleSelectorGUI {
 
     public static void open(Player player, Map<String, Integer> currentSelection) {
         Inventory inv = Bukkit.createInventory(player, 27, GUI_TITLE);
+        populateInventory(inv, player, currentSelection);
+        player.openInventory(inv);
+    }
 
+    public static void update(Player player, Map<String, Integer> currentSelection) {
+        Inventory inv = player.getOpenInventory().getTopInventory();
+        if (inv == null || !isRoleSelectorGUI(player.getOpenInventory().getTitle())) return;
+        populateInventory(inv, player, currentSelection);
+        player.updateInventory();
+    }
+
+    private static void populateInventory(Inventory inv, Player player, Map<String, Integer> currentSelection) {
         Map<Integer, String> slotMap = new HashMap<>();
 
         int slot = 10;
@@ -43,7 +54,6 @@ public class RoleSelectorGUI {
         slot = addRole(inv, slotMap, slot, Material.ENDER_EYE, ROLE_NINJA, ChatColor.DARK_PURPLE + "Ninja", currentSelection.getOrDefault(ROLE_NINJA, 0));
 
         guiMappings.put(player, slotMap);
-        player.openInventory(inv);
     }
 
     private static int addRole(Inventory inv, Map<Integer, String> slotMap, int slot, Material material, String roleKey, String displayName, int count) {
