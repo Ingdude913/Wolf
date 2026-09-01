@@ -745,7 +745,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, (nightDuration + 5) * 20, 0, false, false));
             gp.setTransformed(false);
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
@@ -946,7 +946,7 @@ public class Arena {
             player.removePotionEffect(PotionEffectType.INVISIBILITY);
             inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
             gp.setTransformed(false);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, (phaseTimer + 5) * 20, 0, false, false));
             player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish briefly!");
             return;
         }
