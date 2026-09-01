@@ -89,6 +89,7 @@ public class PlayerDamageListener implements Listener {
         if (arena.getPhase() == Phase.NIGHT) {
             if (ItemBuilder.isItemKey(plugin, attacker.getInventory().getItemInMainHand(), "werewolf-axe")) {
                 if (attackerGp.getRole().isWerewolf()) {
+                    event.setCancelled(true);
                     arena.werewolfKill(attacker, target);
                     return;
                 } else if (attackerGp.getRole().isTrickster()) {

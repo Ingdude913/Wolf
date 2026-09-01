@@ -435,6 +435,9 @@ public class Arena {
     public void adjustRoleSelection(String roleKey, int delta) {
         int current = roleSelection.getOrDefault(roleKey, 0);
         int newValue = Math.max(0, current + delta);
+        if (!debugMode && (roleKey.equals("werewolf") || roleKey.equals("villager")) && newValue < 1) {
+            return;
+        }
         roleSelection.put(roleKey, newValue);
     }
 
