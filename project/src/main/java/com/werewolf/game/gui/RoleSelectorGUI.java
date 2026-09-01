@@ -19,6 +19,7 @@ public class RoleSelectorGUI {
     public static final String GUI_TITLE = ChatColor.DARK_AQUA + "Role Selector - Setup the Game";
 
     private static final Map<Player, Map<Integer, String>> guiMappings = new HashMap<>();
+    private static final Map<Player, Boolean> sheriffEnabledMap = new HashMap<>();
 
     public static final String ROLE_WEREWOLF = "werewolf";
     public static final String ROLE_VILLAGER = "villager";
@@ -30,13 +31,15 @@ public class RoleSelectorGUI {
     public static final String ROLE_MERMAID = "mermaid";
     public static final String ROLE_MASOCHIST = "masochist";
 
-    public static void open(Player player, Map<String, Integer> currentSelection) {
+    public static void open(Player player, Map<String, Integer> currentSelection, boolean sheriffEnabled) {
+        sheriffEnabledMap.put(player, sheriffEnabled);
         Inventory inv = Bukkit.createInventory(player, 27, GUI_TITLE);
         populateInventory(inv, player, currentSelection);
         player.openInventory(inv);
     }
 
-    public static void update(Player player, Map<String, Integer> currentSelection) {
+    public static void update(Player player, Map<String, Integer> currentSelection, boolean sheriffEnabled) {
+        sheriffEnabledMap.put(player, sheriffEnabled);
         Inventory inv = player.getOpenInventory().getTopInventory();
         if (inv == null || !isRoleSelectorGUI(player.getOpenInventory().getTitle())) return;
         populateInventory(inv, player, currentSelection);
@@ -56,6 +59,23 @@ public class RoleSelectorGUI {
         slot = addRole(inv, slotMap, slot, Material.ENDER_EYE, ROLE_NINJA, ChatColor.DARK_PURPLE + "Ninja", currentSelection.getOrDefault(ROLE_NINJA, 0));
         slot = addRole(inv, slotMap, slot, Material.NAUTILUS_SHELL, ROLE_MERMAID, ChatColor.AQUA + "Mermaid", currentSelection.getOrDefault(ROLE_MERMAID, 0));
         slot = addRole(inv, slotMap, slot, Material.CACTUS, ROLE_MASOCHIST, ChatColor.DARK_GREEN + "Masochist", currentSelection.getOrDefault(ROLE_MASOCHIST, 0));
+
+        boolean sheriffEnabled = sheriffEnabledMap.getOrDefault(player, true);
+        ItemStack sheriffToggle = new ItemStack(sheriffEnabled ? Material.EMERALD : Material.REDSTONE);
+        ItemMeta sheriffMeta = sheriffToggle.getItemMeta();
+        if (sheriffMeta != null) {
+            sheriffMeta.setDisplayName(ColorUtil.color(ChatColor.GOLD + "Sheriff Election: " + (sheriffEnabled ? ChatColor.GREEN + "ENABLED" : ChatColor.RED + "DISABLED")));
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "When enabled, players vote for a");
+            lore.add(ChatColor.GRAY + "Sheriff before the first night.");
+            lore.add(ChatColor.GRAY + "The Sheriff gets 2 votes during day.");
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Click to toggle on/off");
+            sheriffMeta.setLore(lore);
+            sheriffToggle.setItemMeta(sheriffMeta);
+        }
+        inv.setItem(22, sheriffToggle);
+        slotMap.put(22, "sheriff-toggle");
 
         guiMappings.put(player, slotMap);
     }
@@ -86,6 +106,7 @@ public class RoleSelectorGUI {
 
     public static void clearMapping(Player player) {
         guiMappings.remove(player);
+        sheriffEnabledMap.remove(player);
     }
 
     public static boolean isRoleSelectorGUI(String title) {

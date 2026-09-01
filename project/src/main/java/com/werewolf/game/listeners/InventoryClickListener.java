@@ -81,14 +81,22 @@ public class InventoryClickListener implements Listener {
             String roleKey = RoleSelectorGUI.getRoleAtSlot(player, slot);
             if (roleKey == null) return;
 
+            if (roleKey.equals("sheriff-toggle")) {
+                boolean newState = !arena.isSheriffEnabled();
+                arena.setSheriffEnabled(newState);
+                player.sendMessage(plugin.prefix() + ChatColor.GOLD + "Sheriff Election: " + (newState ? ChatColor.GREEN + "ENABLED" : ChatColor.RED + "DISABLED"));
+                RoleSelectorGUI.update(player, arena.getRoleSelection(), newState);
+                return;
+            }
+
             if (event.getClick() == ClickType.LEFT) {
                 arena.adjustRoleSelection(roleKey, 1);
                 player.sendMessage(plugin.prefix() + ChatColor.GREEN + "Added one " + roleKey + "! Total: " + arena.getRoleSelection().getOrDefault(roleKey, 0));
-                RoleSelectorGUI.update(player, arena.getRoleSelection());
+                RoleSelectorGUI.update(player, arena.getRoleSelection(), arena.isSheriffEnabled());
             } else if (event.getClick() == ClickType.RIGHT) {
                 arena.adjustRoleSelection(roleKey, -1);
                 player.sendMessage(plugin.prefix() + ChatColor.RED + "Removed one " + roleKey + "! Total: " + arena.getRoleSelection().getOrDefault(roleKey, 0));
-                RoleSelectorGUI.update(player, arena.getRoleSelection());
+                RoleSelectorGUI.update(player, arena.getRoleSelection(), arena.isSheriffEnabled());
             }
         } else if (SheriffGUI.isSheriffGUI(title)) {
             event.setCancelled(true);

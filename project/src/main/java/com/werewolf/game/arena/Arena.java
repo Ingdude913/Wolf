@@ -57,6 +57,7 @@ public class Arena {
 
     private boolean debugMode = false;
     private boolean firstDay = true;
+    private boolean sheriffEnabled = true;
 
     private final Map<UUID, Integer> sheriffElectionVotes = new HashMap<>();
     private UUID sheriffId = null;
@@ -216,6 +217,7 @@ public class Arena {
         GamePlayer gp = getGamePlayer(player);
         if (gp == null) return;
 
+        showPlayerToOthers(player);
         players.remove(gp);
         voteCounts.remove(player.getUniqueId());
         hunterTargets.remove(player.getUniqueId());
@@ -312,7 +314,19 @@ public class Arena {
             p.sendMessage(plugin.prefix() + ChatColor.GOLD + "Your role: " + ChatColor.WHITE + gp.getRole().getName());
             p.sendMessage(plugin.prefix() + ChatColor.GRAY + gp.getRole().getDescription());
         }
-        startSheriffElection();
+        if (sheriffEnabled) {
+            startSheriffElection();
+        } else {
+            broadcast(ChatColor.YELLOW + "Sheriff election is disabled. The game goes straight to day!");
+            firstDay = true;
+            giveDayItems();
+            scoreboardHelper.setupGame();
+            scoreboardHelper.showNametags();
+            for (GamePlayer gp : getAlivePlayers()) {
+                gp.getRole().onDayStart(gp.getPlayer());
+            }
+            startDayPhase();
+        }
     }
 
     private void startSheriffElection() {
@@ -447,7 +461,15 @@ public class Arena {
     }
 
     public void openRoleSelector(Player player) {
-        RoleSelectorGUI.open(player, roleSelection);
+        RoleSelectorGUI.open(player, roleSelection, sheriffEnabled);
+    }
+
+    public boolean isSheriffEnabled() {
+        return sheriffEnabled;
+    }
+
+    public void setSheriffEnabled(boolean enabled) {
+        this.sheriffEnabled = enabled;
     }
 
     private void assignRoles() {
@@ -572,7 +594,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            showPlayerToOthers(p);
             gp.setTransformed(false);
         }
 
@@ -723,7 +745,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            showPlayerToOthers(p);
             gp.setTransformed(false);
             p.getInventory().clear();
             gp.getRole().onNightStart(p);
@@ -806,6 +828,7 @@ public class Arena {
         if (!gp.isAlive()) return;
         gp.setAlive(false);
         Player p = gp.getPlayer();
+        showPlayerToOthers(p);
         p.setGameMode(GameMode.SPECTATOR);
         p.getInventory().clear();
         broadcast(ChatColor.RED + p.getName() + " has been " + reason + "!");
@@ -923,8 +946,16 @@ public class Arena {
             player.removePotionEffect(PotionEffectType.INVISIBILITY);
             inv.removeItem(ItemBuilder.create(plugin, "werewolf-axe"));
             gp.setTransformed(false);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+            hidePlayerFromOthers(player);
             player.sendMessage(plugin.prefix() + ChatColor.RED + "You untransform and vanish briefly!");
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (player.isOnline()) {
+                        showPlayerToOthers(player);
+                    }
+                }
+            }.runTaskLater(plugin, 100L);
             return;
         }
 
@@ -946,7 +977,6 @@ public class Arena {
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
         gp.setTransformed(true);
         player.sendMessage(plugin.prefix() + ChatColor.RED + "You transform into a werewolf!");
     }
@@ -993,6 +1023,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
+            showPlayerToOthers(p);
             Location lobby = plugin.getArenaManager().getGlobalLobby();
             if (lobby != null) {
                 p.teleport(lobby);
@@ -1038,6 +1069,7 @@ public class Arena {
             for (PotionEffect effect : p.getActivePotionEffects()) {
                 p.removePotionEffect(effect.getType());
             }
+            showPlayerToOthers(p);
             Location lobby = plugin.getArenaManager().getGlobalLobby();
             if (lobby != null) {
                 p.teleport(lobby);
@@ -1354,8 +1386,16 @@ public class Arena {
 
         switch (ability) {
             case "vanish":
-                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
+                hidePlayerFromOthers(player);
                 player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You vanish into the shadows for 8 seconds!");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (player.isOnline()) {
+                            showPlayerToOthers(player);
+                        }
+                    }
+                }.runTaskLater(plugin, durationTicks);
                 break;
             case "sprint":
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, 4, false, false));
@@ -1393,8 +1433,7 @@ public class Arena {
                 inv.setChestplate(fakeChest);
                 inv.setLeggings(fakeLegs);
                 inv.setBoots(fakeBoots);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, false));
-                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You are invisible and won't appear on the wolf team list.");
+                player.sendMessage(plugin.prefix() + ChatColor.DARK_PURPLE + "You disguise as a wolf for 8 seconds! You look like a werewolf but won't appear on the wolf team list.");
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -1457,6 +1496,24 @@ public class Arena {
         String prefixed = ColorUtil.color(message);
         for (GamePlayer gp : players) {
             gp.getPlayer().sendMessage(prefixed);
+        }
+    }
+
+    private void hidePlayerFromOthers(Player hidden) {
+        for (GamePlayer gp : players) {
+            Player other = gp.getPlayer();
+            if (!other.getUniqueId().equals(hidden.getUniqueId())) {
+                other.hidePlayer(plugin, hidden);
+            }
+        }
+    }
+
+    private void showPlayerToOthers(Player shown) {
+        for (GamePlayer gp : players) {
+            Player other = gp.getPlayer();
+            if (!other.getUniqueId().equals(shown.getUniqueId())) {
+                other.showPlayer(plugin, shown);
+            }
         }
     }
 }
