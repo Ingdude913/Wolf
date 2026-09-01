@@ -8,6 +8,7 @@ import com.werewolf.game.gui.NinjaGUI;
 import com.werewolf.game.gui.RoleSelectorGUI;
 import com.werewolf.game.gui.SeerGUI;
 import com.werewolf.game.gui.SheriffGUI;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
