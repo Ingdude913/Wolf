@@ -96,6 +96,11 @@ public class GamePlayer {
         return null;
     }
 
+    public MermaidRole asMermaid() {
+        if (role instanceof MermaidRole) return (MermaidRole) role;
+        return null;
+    }
+
     public boolean isSheriff() {
         return isSheriff;
     }

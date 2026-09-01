@@ -13,6 +13,9 @@ night-duration: 60
 transform-cooldown: 10
 ninja-cooldown: 15
 
+# Mermaid freeze duration in seconds (how long werewolf kills are blocked after singing)
+mermaid-freeze-duration: 15
+
 # Sheriff election duration in seconds (after roles assigned, before first night)
 election-duration: 30
 
@@ -34,6 +37,7 @@ role-weights:
   hunter: 1
   trickster: 1
   ninja: 1
+  mermaid: 1
 
 # Items
 items:
@@ -101,3 +105,7 @@ items:
     material: NETHER_STAR
     name: "&b&lRole Selector &7(Right-click to setup roles)"
     slot: 4
+  mermaid-shell:
+    material: NAUTILUS_SHELL
+    name: "&b&lConch Shell &7(Right-click to sing and freeze werewolves)"
+    slot: 1

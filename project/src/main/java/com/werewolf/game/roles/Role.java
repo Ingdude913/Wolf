@@ -48,6 +48,10 @@ public abstract class Role {
         return false;
     }
 
+    public boolean isMermaid() {
+        return false;
+    }
+
     public boolean canSeeWerewolves() {
         return false;
     }

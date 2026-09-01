@@ -27,6 +27,7 @@ public class RoleSelectorGUI {
     public static final String ROLE_HUNTER = "hunter";
     public static final String ROLE_TRICKSTER = "trickster";
     public static final String ROLE_NINJA = "ninja";
+    public static final String ROLE_MERMAID = "mermaid";
 
     public static void open(Player player, Map<String, Integer> currentSelection) {
         Inventory inv = Bukkit.createInventory(player, 27, GUI_TITLE);
@@ -52,6 +53,7 @@ public class RoleSelectorGUI {
         slot = addRole(inv, slotMap, slot, Material.BOW, ROLE_HUNTER, ChatColor.GOLD + "Hunter", currentSelection.getOrDefault(ROLE_HUNTER, 0));
         slot = addRole(inv, slotMap, slot, Material.WOLF_SPAWN_EGG, ROLE_TRICKSTER, ChatColor.DARK_RED + "Trickster", currentSelection.getOrDefault(ROLE_TRICKSTER, 0));
         slot = addRole(inv, slotMap, slot, Material.ENDER_EYE, ROLE_NINJA, ChatColor.DARK_PURPLE + "Ninja", currentSelection.getOrDefault(ROLE_NINJA, 0));
+        slot = addRole(inv, slotMap, slot, Material.NAUTILUS_SHELL, ROLE_MERMAID, ChatColor.AQUA + "Mermaid", currentSelection.getOrDefault(ROLE_MERMAID, 0));
 
         guiMappings.put(player, slotMap);
     }

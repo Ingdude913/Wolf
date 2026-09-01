@@ -142,6 +142,14 @@ public class PlayerInteractListener implements Listener {
                 }
                 return;
             }
+
+            if (ItemBuilder.isItemKey(plugin, event.getItem(), "mermaid-shell")) {
+                event.setCancelled(true);
+                if (arena.getPhase() == Phase.NIGHT) {
+                    arena.mermaidSing(player);
+                }
+                return;
+            }
         }
     }
 }

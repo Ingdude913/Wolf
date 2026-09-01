@@ -51,6 +51,9 @@ public class Arena {
     private int transformCooldown;
     private int ninjaCooldown;
     private int electionDuration;
+    private int mermaidFreezeDuration;
+
+    private long mermaidFreezeUntil = 0;
 
     private boolean debugMode = false;
     private boolean firstDay = true;
@@ -75,6 +78,7 @@ public class Arena {
         this.transformCooldown = plugin.getConfig().getInt("transform-cooldown", 10);
         this.ninjaCooldown = plugin.getConfig().getInt("ninja-cooldown", 15);
         this.electionDuration = plugin.getConfig().getInt("election-duration", 30);
+        this.mermaidFreezeDuration = plugin.getConfig().getInt("mermaid-freeze-duration", 15);
         this.scoreboardHelper = new ScoreboardHelper(plugin, this);
         this.scoreboardHelper.setupLobby();
     }
@@ -451,13 +455,9 @@ public class Arena {
         int hunterCount = roleSelection.getOrDefault("hunter", 0);
         int tricksterCount = roleSelection.getOrDefault("trickster", 0);
         int ninjaCount = roleSelection.getOrDefault("ninja", 0);
+        int mermaidCount = roleSelection.getOrDefault("mermaid", 0);
 
-        if (!debugMode) {
-            if (werewolfCount < 1) werewolfCount = 1;
-            if (villagerCount < 1) villagerCount = 1;
-        }
-
-        int selectedTotal = werewolfCount + villagerCount + witchCount + seerCount + hunterCount + tricksterCount + ninjaCount;
+        int selectedTotal = werewolfCount + villagerCount + witchCount + seerCount + hunterCount + tricksterCount + ninjaCount + mermaidCount;
         if (selectedTotal > total) {
             int overflow = selectedTotal - total;
             if (villagerCount >= overflow) {
@@ -465,6 +465,7 @@ public class Arena {
             } else {
                 overflow -= villagerCount;
                 villagerCount = 0;
+                if (mermaidCount >= overflow) { mermaidCount -= overflow; } else { overflow -= mermaidCount; mermaidCount = 0; }
                 if (ninjaCount >= overflow) { ninjaCount -= overflow; } else { overflow -= ninjaCount; ninjaCount = 0; }
                 if (tricksterCount >= overflow) { tricksterCount -= overflow; } else { overflow -= tricksterCount; tricksterCount = 0; }
                 if (hunterCount >= overflow) { hunterCount -= overflow; } else { overflow -= hunterCount; hunterCount = 0; }
@@ -472,6 +473,11 @@ public class Arena {
                 if (witchCount >= overflow) { witchCount -= overflow; } else { overflow -= witchCount; witchCount = 0; }
                 if (werewolfCount >= overflow) { werewolfCount -= overflow; } else { werewolfCount = 0; }
             }
+        }
+
+        if (!debugMode) {
+            if (werewolfCount < 1) werewolfCount = 1;
+            if (villagerCount < 1) villagerCount = 1;
         }
 
         int index = 0;
@@ -492,6 +498,9 @@ public class Arena {
         }
         for (int i = 0; i < ninjaCount && index < total; i++) {
             playerList.get(index++).setRole(new NinjaRole());
+        }
+        for (int i = 0; i < mermaidCount && index < total; i++) {
+            playerList.get(index++).setRole(new MermaidRole());
         }
         while (index < total) {
             playerList.get(index++).setRole(new VillagerRole());
@@ -773,6 +782,10 @@ public class Arena {
         if (killerGp == null || targetGp == null) return;
         if (!killerGp.getRole().isWerewolf()) return;
         if (!killerGp.isAlive() || !targetGp.isAlive()) return;
+        if (isMermaidFreezeActive()) {
+            killer.sendMessage(plugin.prefix() + ChatColor.AQUA + "The Mermaid's song has frozen your will! You cannot kill right now.");
+            return;
+        }
         if (targetGp.getRole().isWerewolf()) {
             killer.sendMessage(plugin.prefix() + ChatColor.RED + "You cannot kill a fellow werewolf!");
             return;
@@ -955,6 +968,7 @@ public class Arena {
         abilityCooldowns.clear();
         roleSelection.clear();
         sheriffId = null;
+        mermaidFreezeUntil = 0;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
     }
@@ -996,6 +1010,7 @@ public class Arena {
         abilityCooldowns.clear();
         roleSelection.clear();
         sheriffId = null;
+        mermaidFreezeUntil = 0;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
         broadcast(ChatColor.RED + "The game has been force stopped.");
@@ -1091,6 +1106,9 @@ public class Arena {
             case "ninja":
                 role = new NinjaRole();
                 break;
+            case "mermaid":
+                role = new MermaidRole();
+                break;
             default:
                 return;
         }
@@ -1136,6 +1154,7 @@ public class Arena {
         long hunters = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.HunterRole).count();
         long villagers = players.stream().filter(gp -> gp.getRole() instanceof com.werewolf.game.roles.VillagerRole).count();
         long ninjas = players.stream().filter(gp -> gp.getRole().isNinja()).count();
+        long mermaids = players.stream().filter(gp -> gp.getRole().isMermaid()).count();
 
         int dayDur = plugin.getConfig().getInt("day-duration", 120);
         int nightDur = plugin.getConfig().getInt("night-duration", 60);
@@ -1148,6 +1167,7 @@ public class Arena {
         player.sendMessage(ChatColor.GOLD + "Hunters: " + ChatColor.WHITE + hunters);
         player.sendMessage(ChatColor.GREEN + "Villagers: " + ChatColor.WHITE + villagers);
         player.sendMessage(ChatColor.DARK_PURPLE + "Ninjas: " + ChatColor.WHITE + ninjas);
+        player.sendMessage(ChatColor.AQUA + "Mermaids: " + ChatColor.WHITE + mermaids);
         player.sendMessage(ChatColor.WHITE + "Total Players: " + ChatColor.WHITE + total);
         player.sendMessage(ChatColor.YELLOW + "Day Duration: " + ChatColor.WHITE + dayDur + " seconds");
         player.sendMessage(ChatColor.BLUE + "Night Duration: " + ChatColor.WHITE + nightDur + " seconds");
@@ -1340,6 +1360,26 @@ public class Arena {
             default:
                 break;
         }
+    }
+
+    public void mermaidSing(Player player) {
+        GamePlayer gp = getGamePlayer(player);
+        if (gp == null || !gp.isAlive()) return;
+        MermaidRole mermaidRole = gp.asMermaid();
+        if (mermaidRole == null) return;
+        if (mermaidRole.hasSungTonight()) {
+            player.sendMessage(plugin.prefix() + ChatColor.RED + "You have already sung tonight!");
+            return;
+        }
+        mermaidRole.setSungTonight(true);
+        mermaidFreezeUntil = System.currentTimeMillis() + (mermaidFreezeDuration * 1000L);
+        player.getInventory().removeItem(ItemBuilder.create(plugin, "mermaid-shell"));
+        player.sendMessage(plugin.prefix() + ChatColor.AQUA + "You sing the Mermaid's song! The werewolves' will is frozen for " + mermaidFreezeDuration + " seconds!");
+        broadcast(ChatColor.AQUA + "A haunting melody echoes through the night... The werewolves are frozen in place!");
+    }
+
+    private boolean isMermaidFreezeActive() {
+        return mermaidFreezeUntil > 0 && System.currentTimeMillis() < mermaidFreezeUntil;
     }
 
     private boolean isOnCooldown(String key, int cooldownSeconds, Player player) {
