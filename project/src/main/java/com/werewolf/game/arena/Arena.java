@@ -62,6 +62,7 @@ public class Arena {
     private UUID sheriffId = null;
 
     private final Map<String, Integer> roleSelection = new HashMap<>();
+    private final Map<UUID, Integer> fakeVoteCounts = new HashMap<>();
 
     private BossBar bossBar = null;
     private int actionBarTaskId = -1;
@@ -331,6 +332,7 @@ public class Arena {
 
         createBossBar(ChatColor.GOLD + "Sheriff Election", BarColor.YELLOW);
         scoreboardHelper.setupGame();
+        scoreboardHelper.showNametags();
 
         taskId = new BukkitRunnable() {
             @Override
@@ -575,6 +577,7 @@ public class Arena {
         }
 
         createBossBar(ChatColor.GOLD + "Day Time", BarColor.YELLOW);
+        scoreboardHelper.showNametags();
         startActionBar();
 
         taskId = new BukkitRunnable() {
@@ -603,6 +606,14 @@ public class Arena {
     }
 
     private void processVotes() {
+        for (Map.Entry<UUID, Integer> entry : fakeVoteCounts.entrySet()) {
+            voteCounts.merge(entry.getKey(), -entry.getValue(), Integer::sum);
+            if (voteCounts.getOrDefault(entry.getKey(), 0) <= 0) {
+                voteCounts.remove(entry.getKey());
+            }
+        }
+        fakeVoteCounts.clear();
+        scoreboardHelper.updateVotes(voteCounts);
         if (voteCounts.isEmpty()) {
             broadcast(ChatColor.YELLOW + "No votes were cast. No one is eliminated.");
             return;
@@ -656,10 +667,12 @@ public class Arena {
         if (voterGp.getRole().isMasochist()) {
             voterGp.setVoted(true);
             voterGp.setVotedFor(target);
-            int displayedCount = voteCounts.getOrDefault(target.getUniqueId(), 0) + 1;
+            voteCounts.merge(target.getUniqueId(), 1, Integer::sum);
+            fakeVoteCounts.merge(target.getUniqueId(), 1, Integer::sum);
             voter.sendMessage(plugin.prefix() + ChatColor.GREEN + "You voted for " + ChatColor.GOLD + target.getName() + ChatColor.GREEN + "!");
             voter.sendMessage(plugin.prefix() + ChatColor.DARK_GRAY + "Your vote does not count.");
-            broadcast(ChatColor.YELLOW + voter.getName() + " has voted. (" + displayedCount + " votes for " + target.getName() + ")");
+            broadcast(ChatColor.YELLOW + voter.getName() + " has voted. (" + voteCounts.getOrDefault(target.getUniqueId(), 0) + " votes for " + target.getName() + ")");
+            scoreboardHelper.updateVotes(voteCounts);
             return;
         }
         voterGp.setVoted(true);
@@ -679,7 +692,16 @@ public class Arena {
             return;
         }
         Player target = voterGp.getVotedFor();
-        if (target != null && !voterGp.getRole().isMasochist()) {
+        if (target != null && voterGp.getRole().isMasochist()) {
+            voteCounts.merge(target.getUniqueId(), -1, Integer::sum);
+            fakeVoteCounts.merge(target.getUniqueId(), -1, Integer::sum);
+            if (voteCounts.getOrDefault(target.getUniqueId(), 0) <= 0) {
+                voteCounts.remove(target.getUniqueId());
+            }
+            if (fakeVoteCounts.getOrDefault(target.getUniqueId(), 0) <= 0) {
+                fakeVoteCounts.remove(target.getUniqueId());
+            }
+        } else if (target != null) {
             int voteWeight = voterGp.isSheriff() ? 2 : 1;
             voteCounts.merge(target.getUniqueId(), -voteWeight, Integer::sum);
             if (voteCounts.getOrDefault(target.getUniqueId(), 0) <= 0) {
@@ -709,6 +731,7 @@ public class Arena {
         }
 
         createBossBar(ChatColor.DARK_PURPLE + "Night Time", BarColor.PURPLE);
+        scoreboardHelper.hideNametags();
 
         broadcast(ChatColor.DARK_PURPLE + "Night falls! Use your abilities wisely.");
 
@@ -985,10 +1008,12 @@ public class Arena {
         pendingNightDeaths.clear();
         abilityCooldowns.clear();
         roleSelection.clear();
+        fakeVoteCounts.clear();
         sheriffId = null;
         mermaidFreezeUntil = 0;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
+        scoreboardHelper.showNametags();
     }
 
     private void revealAllRoles() {
@@ -1027,10 +1052,12 @@ public class Arena {
         pendingNightDeaths.clear();
         abilityCooldowns.clear();
         roleSelection.clear();
+        fakeVoteCounts.clear();
         sheriffId = null;
         mermaidFreezeUntil = 0;
         phase = Phase.LOBBY;
         scoreboardHelper.setupLobby();
+        scoreboardHelper.showNametags();
         broadcast(ChatColor.RED + "The game has been force stopped.");
     }
 
